@@ -1,6 +1,14 @@
 import { CdkDrag, CdkDragDrop, CdkDropList, CdkDropListGroup } from '@angular/cdk/drag-drop';
 import { CdkScrollable } from '@angular/cdk/scrolling';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { STATUS_CATEGORIES } from '../../core/models/catalog';
 import { EntityId, Issue, WorkflowStatus } from '../../core/models/entities';
@@ -109,7 +117,10 @@ export class BoardPage {
   protected readonly daysLeft = computed(() => {
     const end = this.sprint()?.endDate;
     if (!end) return null;
-    return Math.ceil((new Date(`${end}T00:00:00`).getTime() - new Date(`${todayIso()}T00:00:00`).getTime()) / 86_400_000);
+    return Math.ceil(
+      (new Date(`${end}T00:00:00`).getTime() - new Date(`${todayIso()}T00:00:00`).getTime()) /
+        86_400_000,
+    );
   });
 
   protected readonly hasFilters = computed(() => !!this.query() || this.assigneeFilter().size > 0);
@@ -147,7 +158,8 @@ export class BoardPage {
     this.dragGuard.ended();
     const target = event.container.data;
     const issue = event.item.data;
-    if (event.previousContainer === event.container && event.previousIndex === event.currentIndex) return;
+    if (event.previousContainer === event.container && event.previousIndex === event.currentIndex)
+      return;
     const list = target.issues.filter((i) => i.id !== issue.id);
     this.issues.move(issue.id, { statusId: target.status.id }, list, event.currentIndex);
   }
@@ -155,6 +167,10 @@ export class BoardPage {
   protected createIn(status: WorkflowStatus): void {
     const project = this.project();
     if (!project) return;
-    this.actions.createIssue({ projectId: project.id, statusId: status.id, sprintId: this.sprint()?.id ?? null });
+    this.actions.createIssue({
+      projectId: project.id,
+      statusId: status.id,
+      sprintId: this.sprint()?.id ?? null,
+    });
   }
 }

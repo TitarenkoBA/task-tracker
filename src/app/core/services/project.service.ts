@@ -45,8 +45,7 @@ export class ProjectService {
   suggestKey(name: string): string {
     const translit = transliterate(name).toUpperCase();
     const words = translit.split(/[^A-Z0-9]+/).filter(Boolean);
-    let key =
-      words.length > 1 ? words.map((w) => w[0]).join('') : (words[0] ?? '').slice(0, 4);
+    let key = words.length > 1 ? words.map((w) => w[0]).join('') : (words[0] ?? '').slice(0, 4);
     key = key.replace(/^[0-9]+/, '').slice(0, 10);
     if (key.length < 2) key = (key + 'PRJ').slice(0, 3);
     let candidate = key;
@@ -119,9 +118,39 @@ export class ProjectService {
 }
 
 const TRANSLIT: Record<string, string> = {
-  а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z', и: 'i', й: 'y',
-  к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f',
-  х: 'h', ц: 'c', ч: 'ch', ш: 'sh', щ: 'sch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya',
+  а: 'a',
+  б: 'b',
+  в: 'v',
+  г: 'g',
+  д: 'd',
+  е: 'e',
+  ё: 'e',
+  ж: 'zh',
+  з: 'z',
+  и: 'i',
+  й: 'y',
+  к: 'k',
+  л: 'l',
+  м: 'm',
+  н: 'n',
+  о: 'o',
+  п: 'p',
+  р: 'r',
+  с: 's',
+  т: 't',
+  у: 'u',
+  ф: 'f',
+  х: 'h',
+  ц: 'c',
+  ч: 'ch',
+  ш: 'sh',
+  щ: 'sch',
+  ъ: '',
+  ы: 'y',
+  ь: '',
+  э: 'e',
+  ю: 'yu',
+  я: 'ya',
 };
 
 function transliterate(text: string): string {

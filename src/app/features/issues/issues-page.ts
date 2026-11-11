@@ -9,7 +9,12 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { ISSUE_TYPES, PRIORITIES, PRIORITY_ORDER, STATUS_CATEGORIES } from '../../core/models/catalog';
+import {
+  ISSUE_TYPES,
+  PRIORITIES,
+  PRIORITY_ORDER,
+  STATUS_CATEGORIES,
+} from '../../core/models/catalog';
 import { IssueType, StatusCategory } from '../../core/models/entities';
 import { IssueService } from '../../core/services/issue.service';
 import { PeopleService } from '../../core/services/people.service';

@@ -49,7 +49,8 @@ export const routes: Routes = [
   {
     path: 'browse/:issueKey',
     title: 'Задача · Task Tracker',
-    loadComponent: () => import('./features/issues/issue-detail-page').then((m) => m.IssueDetailPage),
+    loadComponent: () =>
+      import('./features/issues/issue-detail-page').then((m) => m.IssueDetailPage),
   },
   {
     path: 'settings',

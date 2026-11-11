@@ -36,10 +36,14 @@ export class SettingsPage {
     { value: 'system', label: 'Как в системе', icon: 'monitor' },
   ];
 
-  protected readonly storage = signal<{ used: number; quota: number; persisted: boolean } | null>(null);
+  protected readonly storage = signal<{ used: number; quota: number; persisted: boolean } | null>(
+    null,
+  );
   protected readonly editingPersonId = signal<string | null>(null);
   protected readonly replicaId = this.store.replicaId;
-  protected readonly others = computed(() => this.people.people().filter((p) => p.id !== this.people.me()?.id));
+  protected readonly others = computed(() =>
+    this.people.people().filter((p) => p.id !== this.people.me()?.id),
+  );
 
   constructor() {
     void this.refreshStorage();
@@ -102,7 +106,14 @@ export class SettingsPage {
       danger: true,
     });
     if (!ok) return;
-    await this.store.replaceAll({ projects: [], issues: [], sprints: [], people: [], comments: [], activity: [] });
+    await this.store.replaceAll({
+      projects: [],
+      issues: [],
+      sprints: [],
+      people: [],
+      comments: [],
+      activity: [],
+    });
     this.people.ensureMe();
     this.toasts.success('Все данные удалены');
   }

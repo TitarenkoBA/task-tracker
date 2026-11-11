@@ -32,14 +32,23 @@ function addDays(iso: string, days: number): string {
         }
         <div>
           <label class="label" for="sf-name">Название</label>
-          <input id="sf-name" class="input" [value]="name()" (input)="name.set($any($event.target).value)" />
+          <input
+            id="sf-name"
+            class="input"
+            [value]="name()"
+            (input)="name.set($any($event.target).value)"
+          />
         </div>
         @if (data.sprint.state !== 'planned' || data.mode === 'start') {
           <fieldset>
             <legend class="label">Длительность</legend>
             <div class="flex flex-wrap gap-2">
               @for (w of [1, 2, 3, 4]; track w) {
-                <button type="button" class="chip h-8 border border-slate-200 px-3 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800" (click)="setWeeks(w)">
+                <button
+                  type="button"
+                  class="chip h-8 border border-slate-200 px-3 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+                  (click)="setWeeks(w)"
+                >
                   {{ w }} нед.
                 </button>
               }
@@ -48,11 +57,23 @@ function addDays(iso: string, days: number): string {
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="label" for="sf-start">Начало</label>
-              <input id="sf-start" class="input" type="date" [value]="startDate()" (change)="startDate.set($any($event.target).value)" />
+              <input
+                id="sf-start"
+                class="input"
+                type="date"
+                [value]="startDate()"
+                (change)="startDate.set($any($event.target).value)"
+              />
             </div>
             <div>
               <label class="label" for="sf-end">Окончание</label>
-              <input id="sf-end" class="input" type="date" [value]="endDate()" (change)="endDate.set($any($event.target).value)" />
+              <input
+                id="sf-end"
+                class="input"
+                type="date"
+                [value]="endDate()"
+                (change)="endDate.set($any($event.target).value)"
+              />
             </div>
           </div>
           @if (dateError()) {
@@ -61,12 +82,21 @@ function addDays(iso: string, days: number): string {
         }
         <div>
           <label class="label" for="sf-goal">Цель спринта</label>
-          <textarea id="sf-goal" class="input" rows="2" placeholder="Чего хотим достичь?" [value]="goal()" (input)="goal.set($any($event.target).value)"></textarea>
+          <textarea
+            id="sf-goal"
+            class="input"
+            rows="2"
+            placeholder="Чего хотим достичь?"
+            [value]="goal()"
+            (input)="goal.set($any($event.target).value)"
+          ></textarea>
         </div>
       </form>
       <ng-container footer>
         <button type="button" class="btn-secondary" (click)="ref.close()">Отмена</button>
-        <button type="submit" form="sprint-form" class="btn-primary">{{ data.mode === 'start' ? 'Начать' : 'Сохранить' }}</button>
+        <button type="submit" form="sprint-form" class="btn-primary">
+          {{ data.mode === 'start' ? 'Начать' : 'Сохранить' }}
+        </button>
       </ng-container>
     </app-dialog-frame>
   `,
@@ -128,7 +158,9 @@ export class SprintFormDialog {
       <div class="space-y-4 text-sm">
         <div class="grid grid-cols-2 gap-3">
           <div class="rounded-xl bg-emerald-50 p-3 dark:bg-emerald-950/50">
-            <p class="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{{ stats().done }}</p>
+            <p class="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
+              {{ stats().done }}
+            </p>
             <p class="text-emerald-700/80 dark:text-emerald-400/80">готово</p>
           </div>
           <div class="rounded-xl bg-amber-50 p-3 dark:bg-amber-950/50">

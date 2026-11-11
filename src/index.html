@@ -1,11 +1,14 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="ru">
   <head>
     <meta charset="utf-8" />
     <title>Task Tracker</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="description" content="Простой трекер задач: доска, бэклог, спринты. Работает офлайн, данные хранятся на устройстве." />
+    <meta
+      name="description"
+      content="Простой трекер задач: доска, бэклог, спринты. Работает офлайн, данные хранятся на устройстве."
+    />
     <meta name="theme-color" content="#ffffff" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -18,7 +21,9 @@
       // Применяем тёмную тему до загрузки Angular, чтобы экран не «мигал» белым.
       try {
         var s = JSON.parse(localStorage.getItem('task-tracker.settings') || '{}');
-        var dark = s.theme === 'dark' || (s.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+        var dark =
+          s.theme === 'dark' ||
+          (s.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
         if (dark) document.documentElement.classList.add('dark');
       } catch (e) {}
     </script>

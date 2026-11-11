@@ -38,7 +38,9 @@ export class SettingsService {
   private read(): DeviceSettings {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? { ...DEFAULTS, ...(JSON.parse(raw) as Partial<DeviceSettings>) } : { ...DEFAULTS };
+      return raw
+        ? { ...DEFAULTS, ...(JSON.parse(raw) as Partial<DeviceSettings>) }
+        : { ...DEFAULTS };
     } catch {
       return { ...DEFAULTS };
     }

@@ -18,7 +18,9 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       <ng-content select="[leading]" />
       <div class="min-w-0 flex-1">
         @if (eyebrow()) {
-          <p class="truncate text-xs font-medium text-slate-500 dark:text-slate-400">{{ eyebrow() }}</p>
+          <p class="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
+            {{ eyebrow() }}
+          </p>
         }
         <h1 class="truncate text-xl font-bold tracking-tight lg:text-2xl">{{ title() }}</h1>
       </div>

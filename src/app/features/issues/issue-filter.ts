@@ -1,5 +1,11 @@
 import { PRIORITIES } from '../../core/models/catalog';
-import { EntityId, Issue, IssuePriority, IssueType, StatusCategory } from '../../core/models/entities';
+import {
+  EntityId,
+  Issue,
+  IssuePriority,
+  IssueType,
+  StatusCategory,
+} from '../../core/models/entities';
 
 /** Фильтр списка задач (упрощённый аналог JQL). Пустая строка — «любой». */
 export interface IssueFilter {
@@ -24,7 +30,15 @@ export const SORT_LABELS: Record<IssueSort, string> = {
 };
 
 export function emptyFilter(): IssueFilter {
-  return { query: '', projectId: '', category: '', assignee: '', type: '', priority: '', label: '' };
+  return {
+    query: '',
+    projectId: '',
+    category: '',
+    assignee: '',
+    type: '',
+    priority: '',
+    label: '',
+  };
 }
 
 /** Поиск по ключу, названию, описанию и меткам без учёта регистра. */
@@ -69,7 +83,9 @@ export function sortIssues(issues: Issue[], sort: IssueSort, key: (i: Issue) => 
       return list.sort((a, b) => b.createdAt - a.createdAt);
     case 'priority':
       return list.sort(
-        (a, b) => PRIORITIES[b.priority].weight - PRIORITIES[a.priority].weight || b.updatedAt - a.updatedAt,
+        (a, b) =>
+          PRIORITIES[b.priority].weight - PRIORITIES[a.priority].weight ||
+          b.updatedAt - a.updatedAt,
       );
     case 'due':
       // Задачи без срока — в конце.

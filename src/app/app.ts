@@ -58,7 +58,9 @@ export class App {
   constructor() {
     effect(() => {
       if (this.store.persistError()) {
-        this.toasts.error('Не удалось сохранить изменения. Проверьте свободное место и сделайте экспорт.');
+        this.toasts.error(
+          'Не удалось сохранить изменения. Проверьте свободное место и сделайте экспорт.',
+        );
       }
     });
   }
@@ -67,7 +69,8 @@ export class App {
   protected onKeydown(event: KeyboardEvent): void {
     if (event.ctrlKey || event.metaKey || event.altKey || event.defaultPrevented) return;
     const target = event.target as HTMLElement;
-    if (target.closest('input, textarea, select, [contenteditable], .cdk-overlay-container')) return;
+    if (target.closest('input, textarea, select, [contenteditable], .cdk-overlay-container'))
+      return;
     // «с» — та же клавиша в русской раскладке.
     if (event.key === 'c' || event.key === 'с') {
       event.preventDefault();

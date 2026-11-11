@@ -33,7 +33,9 @@ export class SprintService {
   create(projectId: EntityId, name?: string): Sprint {
     const project = this.projects.get(projectId);
     if (!project) throw new Error('Проект не найден');
-    const count = this.store.list('sprints')().filter((s) => s.projectId === projectId).length;
+    const count = this.store
+      .list('sprints')()
+      .filter((s) => s.projectId === projectId).length;
     return this.store.create('sprints', {
       projectId,
       name: name?.trim() || `${project.key} Спринт ${count + 1}`,
@@ -44,7 +46,10 @@ export class SprintService {
     });
   }
 
-  update(id: EntityId, patch: Partial<Pick<Sprint, 'name' | 'goal' | 'startDate' | 'endDate'>>): void {
+  update(
+    id: EntityId,
+    patch: Partial<Pick<Sprint, 'name' | 'goal' | 'startDate' | 'endDate'>>,
+  ): void {
     this.store.update('sprints', id, patch);
   }
 

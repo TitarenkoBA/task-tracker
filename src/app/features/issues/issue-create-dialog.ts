@@ -1,7 +1,20 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { Router } from '@angular/router';
-import { ISSUE_TYPES, PRIORITIES, PRIORITY_ORDER, TOP_LEVEL_TYPES } from '../../core/models/catalog';
+import {
+  ISSUE_TYPES,
+  PRIORITIES,
+  PRIORITY_ORDER,
+  TOP_LEVEL_TYPES,
+} from '../../core/models/catalog';
 import { EntityId, Issue, IssuePriority, IssueType } from '../../core/models/entities';
 import { IssueService } from '../../core/services/issue.service';
 import { PeopleService } from '../../core/services/people.service';
@@ -68,6 +81,7 @@ export class IssueCreateDialog {
     this.sprints.forProject(this.projectId()).filter((s) => s.state !== 'closed'),
   );
   protected readonly titleError = computed(() => this.submitted() && !this.title().trim());
+  private readonly titleInput = viewChild<ElementRef<HTMLInputElement>>('titleInput');
 
   protected issueKey(issue: Issue): string {
     return this.issues.key(issue);
@@ -104,6 +118,7 @@ export class IssueCreateDialog {
         this.title.set('');
         this.description.set('');
         this.submitted.set(false);
+        this.titleInput()?.nativeElement.focus();
       } else {
         this.ref.close(issue);
       }

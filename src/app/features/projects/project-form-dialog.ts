@@ -47,14 +47,28 @@ import { Icon } from '../../shared/ui/icon';
             <p class="mt-1 text-xs text-rose-600">{{ keyError() }}</p>
           } @else {
             <p class="mt-1 text-xs text-slate-500">
-              {{ existing ? 'Ключ нельзя изменить — на него ссылаются задачи.' : 'Задачи будут называться ' + (key() || 'KEY') + '-1, ' + (key() || 'KEY') + '-2…' }}
+              {{
+                existing
+                  ? 'Ключ нельзя изменить — на него ссылаются задачи.'
+                  : 'Задачи будут называться ' +
+                    (key() || 'KEY') +
+                    '-1, ' +
+                    (key() || 'KEY') +
+                    '-2…'
+              }}
             </p>
           }
         </div>
 
         <div>
           <label class="label" for="pf-desc">Описание</label>
-          <textarea id="pf-desc" class="input" rows="2" [value]="description()" (input)="description.set($any($event.target).value)"></textarea>
+          <textarea
+            id="pf-desc"
+            class="input"
+            rows="2"
+            [value]="description()"
+            (input)="description.set($any($event.target).value)"
+          ></textarea>
         </div>
 
         <fieldset>
@@ -64,7 +78,12 @@ import { Icon } from '../../shared/ui/icon';
               <button
                 type="button"
                 class="flex size-9 items-center justify-center rounded-full text-white transition"
-                [class]="colors[c].solid + (color() === c ? ' ring-4 ring-brand-500/40 ring-offset-2 dark:ring-offset-slate-900' : '')"
+                [class]="
+                  colors[c].solid +
+                  (color() === c
+                    ? ' ring-4 ring-brand-500/40 ring-offset-2 dark:ring-offset-slate-900'
+                    : '')
+                "
                 [attr.aria-label]="c"
                 [attr.aria-pressed]="color() === c"
                 (click)="color.set(c)"
@@ -79,7 +98,9 @@ import { Icon } from '../../shared/ui/icon';
       </form>
       <ng-container footer>
         <button type="button" class="btn-secondary" (click)="ref.close()">Отмена</button>
-        <button type="submit" form="project-form" class="btn-primary">{{ existing ? 'Сохранить' : 'Создать проект' }}</button>
+        <button type="submit" form="project-form" class="btn-primary">
+          {{ existing ? 'Сохранить' : 'Создать проект' }}
+        </button>
       </ng-container>
     </app-dialog-frame>
   `,

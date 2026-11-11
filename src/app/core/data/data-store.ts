@@ -17,7 +17,9 @@ import { STORAGE_ADAPTER } from '../storage/storage-adapter';
 /** Откуда пришло изменение. От этого зависит, рассылать ли его пирам. */
 export type ChangeOrigin = 'local' | 'remote' | 'import';
 
-type CollectionSignals = { [C in CollectionName]: WritableSignal<ReadonlyMap<EntityId, CollectionMap[C]>> };
+type CollectionSignals = {
+  [C in CollectionName]: WritableSignal<ReadonlyMap<EntityId, CollectionMap[C]>>;
+};
 type ListSignals = { [C in CollectionName]: Signal<CollectionMap[C][]> };
 
 const REPLICA_KEY = 'replicaId';
@@ -84,7 +86,10 @@ export class DataStore {
   }
 
   /** Живая сущность по id (без реактивности — читает текущее значение сигнала). */
-  get<C extends CollectionName>(collection: C, id: EntityId | null | undefined): CollectionMap[C] | undefined {
+  get<C extends CollectionName>(
+    collection: C,
+    id: EntityId | null | undefined,
+  ): CollectionMap[C] | undefined {
     if (!id) return undefined;
     const entity = this.maps[collection]().get(id);
     return entity && !entity.deleted ? entity : undefined;

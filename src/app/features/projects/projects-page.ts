@@ -25,7 +25,10 @@ import { ActionsService } from '../actions.service';
       @if (cards().length) {
         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           @for (card of cards(); track card.project.id) {
-            <a [routerLink]="['/p', card.project.key, 'board']" class="card group flex flex-col p-4 transition hover:-translate-y-0.5 hover:shadow-md">
+            <a
+              [routerLink]="['/p', card.project.key, 'board']"
+              class="card group flex flex-col p-4 transition hover:-translate-y-0.5 hover:shadow-md"
+            >
               <div class="flex items-center gap-3">
                 <span
                   class="flex size-10 items-center justify-center rounded-xl text-sm font-bold text-white"
@@ -37,10 +40,15 @@ import { ActionsService } from '../actions.service';
                   <h2 class="truncate font-semibold">{{ card.project.name }}</h2>
                   <p class="font-mono text-xs text-slate-500">{{ card.project.key }}</p>
                 </div>
-                <app-icon name="chevron-right" class="text-slate-300 transition group-hover:translate-x-0.5" />
+                <app-icon
+                  name="chevron-right"
+                  class="text-slate-300 transition group-hover:translate-x-0.5"
+                />
               </div>
               @if (card.project.description) {
-                <p class="mt-3 line-clamp-2 text-sm text-slate-500 dark:text-slate-400">{{ card.project.description }}</p>
+                <p class="mt-3 line-clamp-2 text-sm text-slate-500 dark:text-slate-400">
+                  {{ card.project.description }}
+                </p>
               }
               <div class="mt-4">
                 <div class="mb-1.5 flex justify-between text-xs text-slate-500">
@@ -48,14 +56,21 @@ import { ActionsService } from '../actions.service';
                   <span>{{ card.percent }}%</span>
                 </div>
                 <div class="h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                  <div class="h-full rounded-full bg-emerald-500 transition-all" [style.width.%]="card.percent"></div>
+                  <div
+                    class="h-full rounded-full bg-emerald-500 transition-all"
+                    [style.width.%]="card.percent"
+                  ></div>
                 </div>
               </div>
             </a>
           }
         </div>
       } @else {
-        <app-empty-state icon="folder" title="Создайте первый проект" text="Проект объединяет задачи, доску и спринты. Или загрузите демо, чтобы осмотреться.">
+        <app-empty-state
+          icon="folder"
+          title="Создайте первый проект"
+          text="Проект объединяет задачи, доску и спринты. Или загрузите демо, чтобы осмотреться."
+        >
           <button type="button" class="btn-primary" (click)="actions.createProject()">
             <app-icon name="plus" [size]="18" /> Новый проект
           </button>
@@ -77,7 +92,9 @@ export class ProjectsPage {
 
   protected readonly cards = computed(() =>
     this.projects.projects().map((project) => {
-      const issues = this.issues.issues().filter((i) => i.projectId === project.id && i.type !== 'epic');
+      const issues = this.issues
+        .issues()
+        .filter((i) => i.projectId === project.id && i.type !== 'epic');
       const done = issues.filter((i) => this.isDone(project, i.statusId)).length;
       return {
         project,

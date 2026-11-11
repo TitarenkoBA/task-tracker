@@ -29,7 +29,12 @@ import { Icon } from './icon';
             {{ action.label }}
           </button>
         }
-        <button type="button" class="opacity-60 hover:opacity-100" aria-label="Закрыть" (click)="toasts.dismiss(toast.id)">
+        <button
+          type="button"
+          class="opacity-60 hover:opacity-100"
+          aria-label="Закрыть"
+          (click)="toasts.dismiss(toast.id)"
+        >
           <app-icon name="x" [size]="16" />
         </button>
       </div>
@@ -44,6 +49,8 @@ export class Toasts {
   }
 
   protected iconClass(toast: Toast): string {
-    return { info: 'text-brand-400', success: 'text-emerald-400', error: 'text-rose-400' }[toast.kind];
+    return { info: 'text-brand-400', success: 'text-emerald-400', error: 'text-rose-400' }[
+      toast.kind
+    ];
   }
 }

@@ -40,7 +40,11 @@ export function formatRelative(ms: number, now = Date.now()): string {
 }
 
 /** Состояние срока: просрочено, сегодня/завтра или ничего особенного. */
-export function dueState(dueDate: string | null, done: boolean, today = todayIso()): 'overdue' | 'soon' | null {
+export function dueState(
+  dueDate: string | null,
+  done: boolean,
+  today = todayIso(),
+): 'overdue' | 'soon' | null {
   if (!dueDate || done) return null;
   if (dueDate < today) return 'overdue';
   const tomorrow = todayIso(new Date(new Date(`${today}T12:00:00`).getTime() + 86_400_000));

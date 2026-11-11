@@ -16,7 +16,11 @@
           @if (daysLeft() !== null) {
             <span
               class="chip h-5 text-[11px]"
-              [class]="daysLeft()! < 0 ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'"
+              [class]="
+                daysLeft()! < 0
+                  ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
+                  : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+              "
             >
               <app-icon name="clock" [size]="12" />
               @if (daysLeft()! < 0) {
@@ -35,7 +39,11 @@
       <div class="no-scrollbar -mx-4 flex items-center gap-2 overflow-x-auto px-4 pt-2 pb-3">
         <label class="relative shrink-0">
           <span class="sr-only">Поиск по доске</span>
-          <app-icon name="search" [size]="16" class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
+          <app-icon
+            name="search"
+            [size]="16"
+            class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400"
+          />
           <input
             class="input h-9 w-40 pl-9 sm:w-56"
             type="search"
@@ -63,16 +71,26 @@
           <button
             type="button"
             class="chip h-8 shrink-0 border px-3"
-            [class]="assigneeFilter().size === 1 && assigneeFilter().has(me.id)
-              ? 'border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-400'
-              : 'border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300'"
-            (click)="assigneeFilter().has(me.id) && assigneeFilter().size === 1 ? clearFilters() : onlyMine()"
+            [class]="
+              assigneeFilter().size === 1 && assigneeFilter().has(me.id)
+                ? 'border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-400'
+                : 'border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300'
+            "
+            (click)="
+              assigneeFilter().has(me.id) && assigneeFilter().size === 1
+                ? clearFilters()
+                : onlyMine()
+            "
           >
             Только мои
           </button>
         }
         @if (hasFilters()) {
-          <button type="button" class="chip h-8 shrink-0 px-3 text-slate-500 hover:text-slate-900 dark:hover:text-white" (click)="clearFilters()">
+          <button
+            type="button"
+            class="chip h-8 shrink-0 px-3 text-slate-500 hover:text-slate-900 dark:hover:text-white"
+            (click)="clearFilters()"
+          >
             Сбросить
           </button>
         }
@@ -88,14 +106,26 @@
       class="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pt-3 pb-6 lg:snap-none lg:px-8"
     >
       @for (column of columns(); track column.status.id) {
-        <section class="flex w-[82vw] max-w-80 shrink-0 snap-center flex-col rounded-2xl bg-slate-100/80 sm:w-72 xl:w-auto xl:max-w-none xl:min-w-64 xl:flex-1 dark:bg-slate-900/60">
+        <section
+          class="flex w-[82vw] max-w-80 shrink-0 snap-center flex-col rounded-2xl bg-slate-100/80 sm:w-72 xl:w-auto xl:max-w-none xl:min-w-64 xl:flex-1 dark:bg-slate-900/60"
+        >
           <header class="flex items-center gap-2 px-3 pt-3 pb-2">
-            <span class="size-2 rounded-full" [class]="categories[column.status.category].dot"></span>
-            <h2 class="truncate text-xs font-semibold tracking-wide text-slate-600 uppercase dark:text-slate-300">
+            <span
+              class="size-2 rounded-full"
+              [class]="categories[column.status.category].dot"
+            ></span>
+            <h2
+              class="truncate text-xs font-semibold tracking-wide text-slate-600 uppercase dark:text-slate-300"
+            >
               {{ column.status.name }}
             </h2>
             <span class="text-xs text-slate-400">{{ column.issues.length }}</span>
-            <button type="button" class="btn-icon ml-auto size-7 rounded-lg" [attr.aria-label]="'Создать задачу в ' + column.status.name" (click)="createIn(column.status)">
+            <button
+              type="button"
+              class="btn-icon ml-auto size-7 rounded-lg"
+              [attr.aria-label]="'Создать задачу в ' + column.status.name"
+              (click)="createIn(column.status)"
+            >
               <app-icon name="plus" [size]="16" />
             </button>
           </header>
@@ -114,7 +144,9 @@
                 [issue]="issue"
               />
             } @empty {
-              <div class="flex flex-1 items-center justify-center rounded-xl border-2 border-dashed border-slate-200 p-4 text-center text-xs text-slate-400 dark:border-slate-800">
+              <div
+                class="flex flex-1 items-center justify-center rounded-xl border-2 border-dashed border-slate-200 p-4 text-center text-xs text-slate-400 dark:border-slate-800"
+              >
                 Перетащите задачу сюда
               </div>
             }
@@ -126,9 +158,17 @@
     <app-empty-state
       icon="board"
       [title]="sprint() ? 'В спринте пока нет задач' : 'На доске пока пусто'"
-      [text]="sprint() ? 'Добавьте задачи в спринт на странице бэклога.' : 'Создайте первую задачу — она появится в первой колонке.'"
+      [text]="
+        sprint()
+          ? 'Добавьте задачи в спринт на странице бэклога.'
+          : 'Создайте первую задачу — она появится в первой колонке.'
+      "
     >
-      <button type="button" class="btn-primary" (click)="actions.createIssue({ projectId: project.id, sprintId: sprint()?.id ?? null })">
+      <button
+        type="button"
+        class="btn-primary"
+        (click)="actions.createIssue({ projectId: project.id, sprintId: sprint()?.id ?? null })"
+      >
         <app-icon name="plus" [size]="18" /> Создать задачу
       </button>
       <a class="btn-secondary" [routerLink]="['/p', project.key, 'backlog']">Открыть бэклог</a>

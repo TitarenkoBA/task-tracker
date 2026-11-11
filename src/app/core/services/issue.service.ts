@@ -123,7 +123,8 @@ export class IssueService {
   update(id: EntityId, patch: EntityPatch<Issue>): Issue | undefined {
     const before = this.get(id);
     if (!before) return undefined;
-    if (patch.title !== undefined && !patch.title.trim()) throw new Error('Название не может быть пустым');
+    if (patch.title !== undefined && !patch.title.trim())
+      throw new Error('Название не может быть пустым');
     if (patch.labels) patch = { ...patch, labels: normalizeLabels(patch.labels) };
 
     const after = this.store.update('issues', id, patch);
@@ -131,14 +132,16 @@ export class IssueService {
 
     for (const field of Object.keys(FIELD_LABELS) as (keyof Issue)[]) {
       if (JSON.stringify(before[field]) === JSON.stringify(after[field])) continue;
-      const describe = field === 'description' ? () => null : (v: unknown) => this.describe(field, v, after);
+      const describe =
+        field === 'description' ? () => null : (v: unknown) => this.describe(field, v, after);
       this.log(id, 'changed', field, describe(before[field]), describe(after[field]));
     }
 
     // Подзадачи следуют за родителем при смене спринта.
     if (before.sprintId !== after.sprintId) {
       for (const child of this.children(id)) {
-        if (child.type === 'subtask') this.store.update('issues', child.id, { sprintId: after.sprintId });
+        if (child.type === 'subtask')
+          this.store.update('issues', child.id, { sprintId: after.sprintId });
       }
     }
     return after;
@@ -216,7 +219,10 @@ export class IssueService {
     if (value === null || value === undefined || value === '') return null;
     switch (field) {
       case 'statusId':
-        return this.projects.get(issue.projectId)?.statuses.find((s) => s.id === value)?.name ?? String(value);
+        return (
+          this.projects.get(issue.projectId)?.statuses.find((s) => s.id === value)?.name ??
+          String(value)
+        );
       case 'assigneeId':
       case 'reporterId':
         return this.people.get(value as string)?.name ?? '—';

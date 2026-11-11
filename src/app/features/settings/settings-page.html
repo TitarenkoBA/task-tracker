@@ -20,7 +20,8 @@
           </div>
         </div>
         <p class="mt-3 text-xs text-slate-500">
-          Это имя видно в задачах и комментариях. Когда появится совместная работа, его увидят и другие участники.
+          Это имя видно в задачах и комментариях. Когда появится совместная работа, его увидят и
+          другие участники.
         </p>
       }
     </div>
@@ -44,18 +45,35 @@
             />
           } @else {
             <span class="flex-1 truncate text-sm">{{ person.name }}</span>
-            <button type="button" class="btn-icon size-9" [attr.aria-label]="'Переименовать ' + person.name" (click)="editingPersonId.set(person.id)">
+            <button
+              type="button"
+              class="btn-icon size-9"
+              [attr.aria-label]="'Переименовать ' + person.name"
+              (click)="editingPersonId.set(person.id)"
+            >
               <app-icon name="pencil" [size]="16" />
             </button>
-            <button type="button" class="btn-icon size-9 hover:text-rose-600" [attr.aria-label]="'Удалить ' + person.name" (click)="removePerson(person)">
+            <button
+              type="button"
+              class="btn-icon size-9 hover:text-rose-600"
+              [attr.aria-label]="'Удалить ' + person.name"
+              (click)="removePerson(person)"
+            >
               <app-icon name="trash" [size]="16" />
             </button>
           }
         </div>
       }
-      <form class="flex items-center gap-2 px-4 py-2" (submit)="$event.preventDefault(); addPerson(newPerson)">
+      <form
+        class="flex items-center gap-2 px-4 py-2"
+        (submit)="$event.preventDefault(); addPerson(newPerson)"
+      >
         <app-icon name="plus" [size]="18" class="text-slate-400" />
-        <input #newPerson class="h-10 flex-1 bg-transparent text-base outline-none placeholder:text-slate-400 sm:text-sm" placeholder="Имя нового участника" />
+        <input
+          #newPerson
+          class="h-10 flex-1 bg-transparent text-base outline-none placeholder:text-slate-400 sm:text-sm"
+          placeholder="Имя нового участника"
+        />
         <button type="submit" class="btn-ghost h-9">Добавить</button>
       </form>
     </div>
@@ -70,7 +88,11 @@
         <button
           type="button"
           class="flex flex-col items-center gap-1.5 rounded-xl py-3 text-sm transition"
-          [class]="theme.preference() === t.value ? 'bg-brand-50 font-medium text-brand-700 dark:bg-brand-950 dark:text-brand-400' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'"
+          [class]="
+            theme.preference() === t.value
+              ? 'bg-brand-50 font-medium text-brand-700 dark:bg-brand-950 dark:text-brand-400'
+              : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
+          "
           [attr.aria-pressed]="theme.preference() === t.value"
           (click)="theme.set(t.value)"
         >
@@ -87,8 +109,8 @@
     <div class="card divide-y divide-slate-100 dark:divide-slate-800">
       <div class="p-4">
         <p class="text-sm text-slate-600 dark:text-slate-300">
-          Все данные хранятся только в этом браузере. Делайте резервную копию, чтобы перенести их на другое
-          устройство или не потерять при очистке браузера.
+          Все данные хранятся только в этом браузере. Делайте резервную копию, чтобы перенести их на
+          другое устройство или не потерять при очистке браузера.
         </p>
         <div class="mt-3 flex flex-wrap gap-2">
           <button type="button" class="btn-primary" (click)="exportJson()">
@@ -96,7 +118,13 @@
           </button>
           <label class="btn-secondary">
             <app-icon name="upload" [size]="18" /> Импорт
-            <input #fileInput type="file" accept="application/json,.json" class="sr-only" (change)="onFile(fileInput)" />
+            <input
+              #fileInput
+              type="file"
+              accept="application/json,.json"
+              class="sr-only"
+              (change)="onFile(fileInput)"
+            />
           </label>
           <button type="button" class="btn-ghost" (click)="exportCsv()">
             <app-icon name="download" [size]="18" /> Задачи в CSV
@@ -109,7 +137,11 @@
           <div class="flex-1">
             <p>Занято {{ formatBytes(s.used) }} из {{ formatBytes(s.quota) }}</p>
             <p class="text-xs" [class]="s.persisted ? 'text-emerald-600' : 'text-amber-600'">
-              {{ s.persisted ? 'Данные защищены от автоматической очистки' : 'Браузер может удалить данные при нехватке места' }}
+              {{
+                s.persisted
+                  ? 'Данные защищены от автоматической очистки'
+                  : 'Браузер может удалить данные при нехватке места'
+              }}
             </p>
           </div>
           @if (!s.persisted) {
@@ -123,7 +155,9 @@
           <p class="font-medium text-rose-600">Удалить все данные</p>
           <p class="text-xs text-slate-500">Необратимо. Сначала сделайте экспорт.</p>
         </div>
-        <button type="button" class="btn-secondary h-9 text-rose-600!" (click)="resetAll()">Удалить…</button>
+        <button type="button" class="btn-secondary h-9 text-rose-600!" (click)="resetAll()">
+          Удалить…
+        </button>
       </div>
     </div>
   </section>
@@ -132,14 +166,20 @@
   <section>
     <h2 class="section-title">Совместная работа</h2>
     <div class="card flex gap-4 p-4">
-      <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300">
+      <span
+        class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300"
+      >
         <app-icon name="users" />
       </span>
       <div class="text-sm">
         <p class="font-medium">Скоро: работа вместе в реальном времени</p>
         <p class="mt-1 text-slate-500">
-          Устройства смогут соединяться напрямую (P2P), без сервера, и видеть изменения друг друга мгновенно.
-          Статус: <span class="font-medium">{{ sync.status() === 'offline' ? 'только это устройство' : sync.status() }}</span>.
+          Устройства смогут соединяться напрямую (P2P), без сервера, и видеть изменения друг друга
+          мгновенно. Статус:
+          <span class="font-medium">{{
+            sync.status() === 'offline' ? 'только это устройство' : sync.status()
+          }}</span
+          >.
         </p>
         <p class="mt-1 font-mono text-xs text-slate-400">ID устройства: {{ replicaId }}</p>
       </div>
@@ -152,7 +192,10 @@
     <div class="card divide-y divide-slate-100 text-sm dark:divide-slate-800">
       @if (pwa.canInstall()) {
         <div class="flex items-center gap-3 p-4">
-          <p class="flex-1">Установите Task Tracker как приложение — он будет открываться в отдельном окне и работать офлайн.</p>
+          <p class="flex-1">
+            Установите Task Tracker как приложение — он будет открываться в отдельном окне и
+            работать офлайн.
+          </p>
           <button type="button" class="btn-primary h-9" (click)="pwa.install()">Установить</button>
         </div>
       }
@@ -161,7 +204,9 @@
         <ul class="space-y-1 text-slate-600 dark:text-slate-300">
           <li><kbd class="kbd">C</kbd> — создать задачу</li>
           <li><kbd class="kbd">/</kbd> — поиск задач</li>
-          <li><kbd class="kbd">Ctrl</kbd> + <kbd class="kbd">Enter</kbd> — отправить комментарий</li>
+          <li>
+            <kbd class="kbd">Ctrl</kbd> + <kbd class="kbd">Enter</kbd> — отправить комментарий
+          </li>
         </ul>
       </div>
     </div>

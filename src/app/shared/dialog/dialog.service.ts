@@ -12,7 +12,10 @@ import { ConfirmDialog, ConfirmOptions } from './confirm-dialog';
 export class DialogService {
   private readonly dialog = inject(Dialog);
 
-  open<R = unknown, D = unknown, C = unknown>(component: ComponentType<C>, data?: D): DialogRef<R, C> {
+  open<R = unknown, D = unknown, C = unknown>(
+    component: ComponentType<C>,
+    data?: D,
+  ): DialogRef<R, C> {
     return this.dialog.open<R, D, C>(component, {
       data,
       panelClass: 'app-dialog',

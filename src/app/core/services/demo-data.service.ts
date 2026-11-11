@@ -41,7 +41,15 @@ export class DemoDataService {
     const seeds: Seed[] = [
       ['story', 'Экран входа по email', 'in_progress', 'high', me.id, ['ui'], 5],
       ['story', 'Восстановление пароля', 'todo', 'medium', anna.id, ['ui', 'backend'], 3],
-      ['bug', 'Кнопка «Войти» не реагирует на Android', 'in_review', 'highest', ivan.id, ['android'], 2],
+      [
+        'bug',
+        'Кнопка «Войти» не реагирует на Android',
+        'in_review',
+        'highest',
+        ivan.id,
+        ['android'],
+        2,
+      ],
       ['task', 'Настроить CI для сборки', 'done', 'low', ivan.id, ['devops'], 1],
       ['task', 'Описать API профиля', 'todo', 'medium', null, ['backend', 'docs'], 2],
     ];
@@ -61,8 +69,19 @@ export class DemoDataService {
     }
 
     const login = this.issues.issues().find((i) => i.title === 'Экран входа по email')!;
-    this.issues.create({ projectId: project.id, type: 'subtask', title: 'Вёрстка формы', parentId: login.id, statusId: 'done' });
-    this.issues.create({ projectId: project.id, type: 'subtask', title: 'Валидация полей', parentId: login.id });
+    this.issues.create({
+      projectId: project.id,
+      type: 'subtask',
+      title: 'Вёрстка формы',
+      parentId: login.id,
+      statusId: 'done',
+    });
+    this.issues.create({
+      projectId: project.id,
+      type: 'subtask',
+      title: 'Валидация полей',
+      parentId: login.id,
+    });
     this.issues.addComment(login.id, 'Макеты лежат в Figma, ссылку добавлю позже.');
 
     for (const title of ['Тёмная тема', 'Push-уведомления', 'Экспорт отчётов в PDF']) {

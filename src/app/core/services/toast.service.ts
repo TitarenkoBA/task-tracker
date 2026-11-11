@@ -13,8 +13,16 @@ export class ToastService {
   private nextId = 1;
   readonly toasts = signal<Toast[]>([]);
 
-  show(message: string, options: Partial<Omit<Toast, 'id' | 'message'>> & { duration?: number } = {}): void {
-    const toast: Toast = { id: this.nextId++, message, kind: options.kind ?? 'info', action: options.action };
+  show(
+    message: string,
+    options: Partial<Omit<Toast, 'id' | 'message'>> & { duration?: number } = {},
+  ): void {
+    const toast: Toast = {
+      id: this.nextId++,
+      message,
+      kind: options.kind ?? 'info',
+      action: options.action,
+    };
     this.toasts.update((list) => [...list.slice(-2), toast]);
     setTimeout(() => this.dismiss(toast.id), options.duration ?? 4000);
   }

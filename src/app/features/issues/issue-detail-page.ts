@@ -82,10 +82,16 @@ export class IssueDetailPage {
   protected readonly childProgress = computed(() => {
     const list = this.children();
     const done = list.filter((c) => this.issues.isDone(c)).length;
-    return { done, total: list.length, percent: list.length ? Math.round((done / list.length) * 100) : 0 };
+    return {
+      done,
+      total: list.length,
+      percent: list.length ? Math.round((done / list.length) * 100) : 0,
+    };
   });
   protected readonly epics = computed(() =>
-    this.issues.issues().filter((i) => i.projectId === this.issue()?.projectId && i.type === 'epic'),
+    this.issues
+      .issues()
+      .filter((i) => i.projectId === this.issue()?.projectId && i.type === 'epic'),
   );
   protected readonly projectSprints = computed(() => {
     const issue = this.issue();

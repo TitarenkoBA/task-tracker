@@ -21,7 +21,9 @@ import { Icon } from '../ui/icon';
       'flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:max-h-[85dvh] sm:rounded-3xl dark:bg-slate-900',
   },
   template: `
-    <div class="mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-full bg-slate-200 sm:hidden dark:bg-slate-700"></div>
+    <div
+      class="mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-full bg-slate-200 sm:hidden dark:bg-slate-700"
+    ></div>
     <header class="flex shrink-0 items-center gap-2 px-5 pt-3 pb-2 sm:pt-5">
       <h2 class="flex-1 text-lg font-semibold">{{ title() }}</h2>
       <button type="button" class="btn-icon -mr-2" aria-label="Закрыть" (click)="ref.close()">

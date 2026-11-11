@@ -1,4 +1,10 @@
-import { BaseEntity, COLLECTIONS, CollectionName, Snapshot, emptySnapshot } from '../models/entities';
+import {
+  BaseEntity,
+  COLLECTIONS,
+  CollectionName,
+  Snapshot,
+  emptySnapshot,
+} from '../models/entities';
 import type { StorageAdapter } from './storage-adapter';
 
 /** Хранилище в памяти. Используется в тестах; данные живут до перезагрузки. */

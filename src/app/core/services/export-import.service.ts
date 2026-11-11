@@ -61,22 +61,38 @@ export class ExportImportService {
 
   /** Скачать задачи в CSV (для Excel / Google Таблиц). Только экспорт, импорт CSV не поддерживается. */
   downloadCsv(): void {
-    const header = ['Ключ', 'Проект', 'Тип', 'Название', 'Статус', 'Приоритет', 'Исполнитель', 'Метки', 'Story points', 'Срок', 'Спринт', 'Создана', 'Описание'];
-    const rows = this.issues.issues().map((i) => [
-      this.issues.key(i),
-      this.projects.get(i.projectId)?.name ?? '',
-      ISSUE_TYPES[i.type].label,
-      i.title,
-      this.issues.status(i)?.name ?? '',
-      PRIORITIES[i.priority].label,
-      this.people.get(i.assigneeId)?.name ?? '',
-      i.labels.join(', '),
-      i.storyPoints ?? '',
-      i.dueDate ?? '',
-      this.sprints.get(i.sprintId)?.name ?? '',
-      new Date(i.createdAt).toISOString(),
-      i.description,
-    ]);
+    const header = [
+      'Ключ',
+      'Проект',
+      'Тип',
+      'Название',
+      'Статус',
+      'Приоритет',
+      'Исполнитель',
+      'Метки',
+      'Story points',
+      'Срок',
+      'Спринт',
+      'Создана',
+      'Описание',
+    ];
+    const rows = this.issues
+      .issues()
+      .map((i) => [
+        this.issues.key(i),
+        this.projects.get(i.projectId)?.name ?? '',
+        ISSUE_TYPES[i.type].label,
+        i.title,
+        this.issues.status(i)?.name ?? '',
+        PRIORITIES[i.priority].label,
+        this.people.get(i.assigneeId)?.name ?? '',
+        i.labels.join(', '),
+        i.storyPoints ?? '',
+        i.dueDate ?? '',
+        this.sprints.get(i.sprintId)?.name ?? '',
+        new Date(i.createdAt).toISOString(),
+        i.description,
+      ]);
     const csv = [header, ...rows].map((r) => r.map(csvCell).join(',')).join('\r\n');
     // BOM нужен, чтобы Excel правильно открыл кириллицу.
     download('﻿' + csv, `task-tracker-${today()}.csv`, 'text/csv;charset=utf-8');
@@ -104,7 +120,8 @@ export class ExportImportService {
       const items = data[collection] ?? [];
       if (!Array.isArray(items)) throw new ImportError(`Раздел «${collection}» повреждён`);
       for (const item of items) {
-        if (!isValidEntity(item)) throw new ImportError(`Повреждена запись в разделе «${collection}»`);
+        if (!isValidEntity(item))
+          throw new ImportError(`Повреждена запись в разделе «${collection}»`);
       }
       (snapshot[collection] as BaseEntity[]) = items as BaseEntity[];
     }

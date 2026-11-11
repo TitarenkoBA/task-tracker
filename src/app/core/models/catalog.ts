@@ -32,16 +32,39 @@ export interface PriorityInfo {
 }
 
 export const PRIORITIES: Record<IssuePriority, PriorityInfo> = {
-  highest: { label: 'Наивысший', icon: 'chevrons-up', classes: 'text-rose-600 dark:text-rose-400', weight: 5 },
-  high: { label: 'Высокий', icon: 'chevron-up', classes: 'text-orange-500 dark:text-orange-400', weight: 4 },
-  medium: { label: 'Средний', icon: 'equals', classes: 'text-amber-500 dark:text-amber-400', weight: 3 },
-  low: { label: 'Низкий', icon: 'chevron-down', classes: 'text-sky-500 dark:text-sky-400', weight: 2 },
+  highest: {
+    label: 'Наивысший',
+    icon: 'chevrons-up',
+    classes: 'text-rose-600 dark:text-rose-400',
+    weight: 5,
+  },
+  high: {
+    label: 'Высокий',
+    icon: 'chevron-up',
+    classes: 'text-orange-500 dark:text-orange-400',
+    weight: 4,
+  },
+  medium: {
+    label: 'Средний',
+    icon: 'equals',
+    classes: 'text-amber-500 dark:text-amber-400',
+    weight: 3,
+  },
+  low: {
+    label: 'Низкий',
+    icon: 'chevron-down',
+    classes: 'text-sky-500 dark:text-sky-400',
+    weight: 2,
+  },
   lowest: { label: 'Наинизший', icon: 'chevrons-down', classes: 'text-slate-400', weight: 1 },
 };
 
 export const PRIORITY_ORDER: IssuePriority[] = ['highest', 'high', 'medium', 'low', 'lowest'];
 
-export const STATUS_CATEGORIES: Record<StatusCategory, { label: string; classes: string; dot: string }> = {
+export const STATUS_CATEGORIES: Record<
+  StatusCategory,
+  { label: string; classes: string; dot: string }
+> = {
   todo: {
     label: 'К выполнению',
     classes: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
@@ -71,14 +94,35 @@ export function defaultStatuses(): WorkflowStatus[] {
 
 /** Классы Tailwind для цветов проектов и аватаров. */
 export const COLOR_CLASSES: Record<ProjectColor, { solid: string; soft: string }> = {
-  indigo: { solid: 'bg-indigo-500', soft: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300' },
+  indigo: {
+    solid: 'bg-indigo-500',
+    soft: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300',
+  },
   sky: { solid: 'bg-sky-500', soft: 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300' },
-  emerald: { solid: 'bg-emerald-500', soft: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' },
-  amber: { solid: 'bg-amber-500', soft: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' },
-  rose: { solid: 'bg-rose-500', soft: 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300' },
-  violet: { solid: 'bg-violet-500', soft: 'bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300' },
-  teal: { solid: 'bg-teal-500', soft: 'bg-teal-100 text-teal-700 dark:bg-teal-950 dark:text-teal-300' },
-  orange: { solid: 'bg-orange-500', soft: 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300' },
+  emerald: {
+    solid: 'bg-emerald-500',
+    soft: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
+  },
+  amber: {
+    solid: 'bg-amber-500',
+    soft: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
+  },
+  rose: {
+    solid: 'bg-rose-500',
+    soft: 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300',
+  },
+  violet: {
+    solid: 'bg-violet-500',
+    soft: 'bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300',
+  },
+  teal: {
+    solid: 'bg-teal-500',
+    soft: 'bg-teal-100 text-teal-700 dark:bg-teal-950 dark:text-teal-300',
+  },
+  orange: {
+    solid: 'bg-orange-500',
+    soft: 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300',
+  },
 };
 
 /** Подписи полей задачи для истории изменений. */

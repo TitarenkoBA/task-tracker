@@ -1,6 +1,14 @@
 import { CdkDrag, CdkDragDrop, CdkDropList, CdkDropListGroup } from '@angular/cdk/drag-drop';
 import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { EntityId, Issue, Sprint } from '../../core/models/entities';
 import { IssueService } from '../../core/services/issue.service';
@@ -124,7 +132,8 @@ export class BacklogPage {
 
   protected drop(event: CdkDragDrop<Section, Section, Issue>): void {
     this.dragGuard.ended();
-    if (event.previousContainer === event.container && event.previousIndex === event.currentIndex) return;
+    if (event.previousContainer === event.container && event.previousIndex === event.currentIndex)
+      return;
     const target = event.container.data;
     const issue = event.item.data;
     const list = target.issues.filter((i) => i.id !== issue.id);

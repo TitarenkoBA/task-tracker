@@ -1,5 +1,19 @@
-import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, linkedSignal } from '@angular/core';
+import {
+  CdkDrag,
+  CdkDragDrop,
+  CdkDragHandle,
+  CdkDropList,
+  moveItemInArray,
+} from '@angular/cdk/drag-drop';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  linkedSignal,
+} from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { COLOR_CLASSES, STATUS_CATEGORIES } from '../../core/models/catalog';
 import { StatusCategory, WorkflowStatus } from '../../core/models/entities';
@@ -16,7 +30,16 @@ import { ProjectSwitcher } from './project-switcher';
 /** Настройки проекта: основные данные, статусы (колонки доски), удаление. */
 @Component({
   selector: 'app-project-settings-page',
-  imports: [RouterLink, CdkDropList, CdkDrag, CdkDragHandle, PageHeader, ProjectSwitcher, Icon, EmptyState],
+  imports: [
+    RouterLink,
+    CdkDropList,
+    CdkDrag,
+    CdkDragHandle,
+    PageHeader,
+    ProjectSwitcher,
+    Icon,
+    EmptyState,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './project-settings-page.html',
 })
@@ -43,7 +66,8 @@ export class ProjectSettingsPage {
   protected readonly counts = computed(() => {
     const map = new Map<string, number>();
     for (const issue of this.issues.issues()) {
-      if (issue.projectId === this.project()?.id) map.set(issue.statusId, (map.get(issue.statusId) ?? 0) + 1);
+      if (issue.projectId === this.project()?.id)
+        map.set(issue.statusId, (map.get(issue.statusId) ?? 0) + 1);
     }
     return map;
   });

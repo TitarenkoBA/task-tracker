@@ -35,11 +35,22 @@ export class DashboardPage {
 
   protected readonly greeting = computed(() => {
     const hour = new Date().getHours();
-    const part = hour < 6 ? 'Доброй ночи' : hour < 12 ? 'Доброе утро' : hour < 18 ? 'Добрый день' : 'Добрый вечер';
+    const part =
+      hour < 6
+        ? 'Доброй ночи'
+        : hour < 12
+          ? 'Доброе утро'
+          : hour < 18
+            ? 'Добрый день'
+            : 'Добрый вечер';
     const name = this.people.me()?.name;
     return name && name !== 'Я' ? `${part}, ${name.split(' ')[0]}` : part;
   });
-  protected readonly today = new Intl.DateTimeFormat('ru', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
+  protected readonly today = new Intl.DateTimeFormat('ru', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  }).format(new Date());
 
   private readonly openIssues = computed(() =>
     this.issues.issues().filter((i) => i.type !== 'epic' && !this.issues.isDone(i)),
@@ -49,7 +60,11 @@ export class DashboardPage {
     const me = this.people.me()?.id;
     return this.openIssues()
       .filter((i) => i.assigneeId === me)
-      .sort((a, b) => PRIORITIES[b.priority].weight - PRIORITIES[a.priority].weight || b.updatedAt - a.updatedAt);
+      .sort(
+        (a, b) =>
+          PRIORITIES[b.priority].weight - PRIORITIES[a.priority].weight ||
+          b.updatedAt - a.updatedAt,
+      );
   });
 
   protected readonly stats = computed(() => {

@@ -3,7 +3,11 @@
     <div class="flex gap-2">
       <label class="relative flex-1">
         <span class="sr-only">Поиск задач</span>
-        <app-icon name="search" [size]="18" class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
+        <app-icon
+          name="search"
+          [size]="18"
+          class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400"
+        />
         <input
           #search
           class="input pl-10"
@@ -23,7 +27,9 @@
         <app-icon name="filter" [size]="18" />
         <span class="hidden sm:inline">Фильтры</span>
         @if (filterCount()) {
-          <span class="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-brand-600 text-[11px] font-bold text-white">
+          <span
+            class="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-brand-600 text-[11px] font-bold text-white"
+          >
             {{ filterCount() }}
           </span>
         }
@@ -32,36 +38,62 @@
 
     @if (state.panelOpen()) {
       <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-        <select class="input" aria-label="Проект" (change)="set('projectId', $any($event.target).value)">
+        <select
+          class="input"
+          aria-label="Проект"
+          (change)="set('projectId', $any($event.target).value)"
+        >
           <option value="">Все проекты</option>
           @for (p of projects.projects(); track p.id) {
-            <option [value]="p.id" [selected]="state.filter().projectId === p.id">{{ p.name }}</option>
+            <option [value]="p.id" [selected]="state.filter().projectId === p.id">
+              {{ p.name }}
+            </option>
           }
         </select>
-        <select class="input" aria-label="Статус" (change)="set('category', $any($event.target).value)">
+        <select
+          class="input"
+          aria-label="Статус"
+          (change)="set('category', $any($event.target).value)"
+        >
           <option value="">Любой статус</option>
           @for (c of categoryList; track c) {
-            <option [value]="c" [selected]="state.filter().category === c">{{ categoryInfo[c].label }}</option>
+            <option [value]="c" [selected]="state.filter().category === c">
+              {{ categoryInfo[c].label }}
+            </option>
           }
         </select>
-        <select class="input" aria-label="Исполнитель" (change)="set('assignee', $any($event.target).value)">
+        <select
+          class="input"
+          aria-label="Исполнитель"
+          (change)="set('assignee', $any($event.target).value)"
+        >
           <option value="">Любой исполнитель</option>
           <option value="me" [selected]="state.filter().assignee === 'me'">Мои задачи</option>
           <option value="none" [selected]="state.filter().assignee === 'none'">Не назначены</option>
           @for (p of people.people(); track p.id) {
-            <option [value]="p.id" [selected]="state.filter().assignee === p.id">{{ p.name }}</option>
+            <option [value]="p.id" [selected]="state.filter().assignee === p.id">
+              {{ p.name }}
+            </option>
           }
         </select>
         <select class="input" aria-label="Тип" (change)="set('type', $any($event.target).value)">
           <option value="">Любой тип</option>
           @for (t of typeList; track t) {
-            <option [value]="t" [selected]="state.filter().type === t">{{ typeInfo[t].label }}</option>
+            <option [value]="t" [selected]="state.filter().type === t">
+              {{ typeInfo[t].label }}
+            </option>
           }
         </select>
-        <select class="input" aria-label="Приоритет" (change)="set('priority', $any($event.target).value)">
+        <select
+          class="input"
+          aria-label="Приоритет"
+          (change)="set('priority', $any($event.target).value)"
+        >
           <option value="">Любой приоритет</option>
           @for (p of priorityOrder; track p) {
-            <option [value]="p" [selected]="state.filter().priority === p">{{ priorityInfo[p].label }}</option>
+            <option [value]="p" [selected]="state.filter().priority === p">
+              {{ priorityInfo[p].label }}
+            </option>
           }
         </select>
         <select class="input" aria-label="Метка" (change)="set('label', $any($event.target).value)">
@@ -70,12 +102,18 @@
             <option [value]="l" [selected]="state.filter().label === l">{{ l }}</option>
           }
         </select>
-        <select class="input" aria-label="Сортировка" (change)="state.sort.set($any($event.target).value)">
+        <select
+          class="input"
+          aria-label="Сортировка"
+          (change)="state.sort.set($any($event.target).value)"
+        >
           @for (s of sortList; track s) {
             <option [value]="s" [selected]="state.sort() === s">{{ sortLabels[s] }}</option>
           }
         </select>
-        <button type="button" class="btn-ghost" [disabled]="!filterCount()" (click)="reset()">Сбросить фильтры</button>
+        <button type="button" class="btn-ghost" [disabled]="!filterCount()" (click)="reset()">
+          Сбросить фильтры
+        </button>
       </div>
     }
   </div>
@@ -90,12 +128,20 @@
       }
     </div>
     @if (results().length > visible().length) {
-      <button type="button" class="btn-secondary mx-auto mt-4 flex" (click)="limit.set(limit() + 100)">
+      <button
+        type="button"
+        class="btn-secondary mx-auto mt-4 flex"
+        (click)="limit.set(limit() + 100)"
+      >
         Показать ещё ({{ results().length - visible().length }})
       </button>
     }
   } @else {
-    <app-empty-state icon="search" title="Ничего не найдено" text="Попробуйте изменить запрос или сбросить фильтры.">
+    <app-empty-state
+      icon="search"
+      title="Ничего не найдено"
+      text="Попробуйте изменить запрос или сбросить фильтры."
+    >
       @if (filterCount() || state.filter().query) {
         <button type="button" class="btn-secondary" (click)="reset()">Сбросить</button>
       }

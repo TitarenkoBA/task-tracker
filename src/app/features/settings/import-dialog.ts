@@ -28,10 +28,10 @@ const COLLECTION_LABELS: Record<string, string> = {
   template: `
     <app-dialog-frame title="Импорт данных">
       <div class="space-y-4 text-sm">
-        <p class="text-slate-500">
-          Резервная копия от {{ exportedAt }}
-        </p>
-        <dl class="grid grid-cols-2 gap-x-4 gap-y-1 rounded-xl bg-slate-50 p-3 dark:bg-slate-800/50">
+        <p class="text-slate-500">Резервная копия от {{ exportedAt }}</p>
+        <dl
+          class="grid grid-cols-2 gap-x-4 gap-y-1 rounded-xl bg-slate-50 p-3 dark:bg-slate-800/50"
+        >
           @for (row of counts; track row.label) {
             <dt class="text-slate-500">{{ row.label }}</dt>
             <dd class="text-right font-medium">{{ row.count }}</dd>
@@ -40,25 +40,61 @@ const COLLECTION_LABELS: Record<string, string> = {
 
         <fieldset class="space-y-2">
           <legend class="label">Как загрузить</legend>
-          <label class="flex cursor-pointer gap-3 rounded-xl border p-3 transition" [class]="mode() === 'merge' ? 'border-brand-500 bg-brand-50/60 dark:bg-brand-950/40' : 'border-slate-200 dark:border-slate-700'">
-            <input type="radio" name="mode" class="mt-0.5 accent-brand-600" [checked]="mode() === 'merge'" (change)="mode.set('merge')" />
+          <label
+            class="flex cursor-pointer gap-3 rounded-xl border p-3 transition"
+            [class]="
+              mode() === 'merge'
+                ? 'border-brand-500 bg-brand-50/60 dark:bg-brand-950/40'
+                : 'border-slate-200 dark:border-slate-700'
+            "
+          >
+            <input
+              type="radio"
+              name="mode"
+              class="mt-0.5 accent-brand-600"
+              [checked]="mode() === 'merge'"
+              (change)="mode.set('merge')"
+            />
             <span>
               <span class="block font-medium">Объединить (рекомендуется)</span>
-              <span class="block text-slate-500">Новое добавится, а при расхождениях для каждого поля останется более позднее изменение. Ничего не потеряется.</span>
+              <span class="block text-slate-500"
+                >Новое добавится, а при расхождениях для каждого поля останется более позднее
+                изменение. Ничего не потеряется.</span
+              >
             </span>
           </label>
-          <label class="flex cursor-pointer gap-3 rounded-xl border p-3 transition" [class]="mode() === 'replace' ? 'border-rose-500 bg-rose-50/60 dark:bg-rose-950/40' : 'border-slate-200 dark:border-slate-700'">
-            <input type="radio" name="mode" class="mt-0.5 accent-rose-600" [checked]="mode() === 'replace'" (change)="mode.set('replace')" />
+          <label
+            class="flex cursor-pointer gap-3 rounded-xl border p-3 transition"
+            [class]="
+              mode() === 'replace'
+                ? 'border-rose-500 bg-rose-50/60 dark:bg-rose-950/40'
+                : 'border-slate-200 dark:border-slate-700'
+            "
+          >
+            <input
+              type="radio"
+              name="mode"
+              class="mt-0.5 accent-rose-600"
+              [checked]="mode() === 'replace'"
+              (change)="mode.set('replace')"
+            />
             <span>
               <span class="block font-medium">Заменить всё</span>
-              <span class="block text-slate-500">Текущие данные на этом устройстве будут удалены и заменены содержимым файла.</span>
+              <span class="block text-slate-500"
+                >Текущие данные на этом устройстве будут удалены и заменены содержимым файла.</span
+              >
             </span>
           </label>
         </fieldset>
       </div>
       <ng-container footer>
         <button type="button" class="btn-secondary" (click)="ref.close()">Отмена</button>
-        <button type="button" [class]="mode() === 'replace' ? 'btn-danger' : 'btn-primary'" [disabled]="busy()" (click)="run()">
+        <button
+          type="button"
+          [class]="mode() === 'replace' ? 'btn-danger' : 'btn-primary'"
+          [disabled]="busy()"
+          (click)="run()"
+        >
           {{ mode() === 'replace' ? 'Заменить данные' : 'Импортировать' }}
         </button>
       </ng-container>

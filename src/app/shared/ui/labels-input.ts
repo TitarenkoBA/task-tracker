@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, model, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  model,
+  signal,
+} from '@angular/core';
 import { IssueService } from '../../core/services/issue.service';
 import { Icon } from './icon';
 
@@ -18,7 +26,12 @@ import { Icon } from './icon';
       @for (label of value(); track label) {
         <span class="chip bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
           {{ label }}
-          <button type="button" class="-mr-1 opacity-60 hover:opacity-100" [attr.aria-label]="'Удалить метку ' + label" (click)="remove(label)">
+          <button
+            type="button"
+            class="-mr-1 opacity-60 hover:opacity-100"
+            [attr.aria-label]="'Удалить метку ' + label"
+            (click)="remove(label)"
+          >
             <app-icon name="x" [size]="12" />
           </button>
         </span>

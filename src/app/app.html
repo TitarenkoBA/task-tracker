@@ -3,7 +3,9 @@
   class="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-slate-200 bg-white lg:flex dark:border-slate-800 dark:bg-slate-900"
 >
   <a routerLink="/" class="flex h-16 shrink-0 items-center gap-2.5 px-5">
-    <span class="flex size-8 items-center justify-center rounded-xl bg-brand-600 text-white shadow-sm">
+    <span
+      class="flex size-8 items-center justify-center rounded-xl bg-brand-600 text-white shadow-sm"
+    >
       <app-icon name="check" [size]="18" [strokeWidth]="3" />
     </span>
     <span class="text-base font-bold tracking-tight">Task Tracker</span>
@@ -29,31 +31,57 @@
       <app-icon name="list" [size]="18" /> Все задачи
       <kbd class="ml-auto text-xs text-slate-400">/</kbd>
     </a>
-    <a routerLink="/projects" routerLinkActive="nav-active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">
+    <a
+      routerLink="/projects"
+      routerLinkActive="nav-active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      class="nav-link"
+    >
       <app-icon name="folder" [size]="18" /> Проекты
     </a>
 
     <div class="flex items-center justify-between px-3 pt-5 pb-1">
       <span class="text-xs font-semibold tracking-wide text-slate-400 uppercase">Проекты</span>
-      <button type="button" class="btn-icon size-7 rounded-lg" aria-label="Новый проект" (click)="actions.createProject()">
+      <button
+        type="button"
+        class="btn-icon size-7 rounded-lg"
+        aria-label="Новый проект"
+        (click)="actions.createProject()"
+      >
         <app-icon name="plus" [size]="16" />
       </button>
     </div>
     @for (project of projects.projects(); track project.id) {
       <div>
-        <a [routerLink]="['/p', project.key, 'board']" class="nav-link" [class.font-semibold]="projects.current()?.id === project.id">
+        <a
+          [routerLink]="['/p', project.key, 'board']"
+          class="nav-link"
+          [class.font-semibold]="projects.current()?.id === project.id"
+        >
           <span class="size-2.5 rounded-full" [class]="colors[project.color].solid"></span>
           <span class="truncate">{{ project.name }}</span>
         </a>
         @if (projects.current()?.id === project.id) {
           <div class="ml-5 space-y-0.5 border-l border-slate-200 pl-2 dark:border-slate-800">
-            <a [routerLink]="['/p', project.key, 'board']" routerLinkActive="nav-active" class="nav-link h-8">
+            <a
+              [routerLink]="['/p', project.key, 'board']"
+              routerLinkActive="nav-active"
+              class="nav-link h-8"
+            >
               <app-icon name="board" [size]="16" /> Доска
             </a>
-            <a [routerLink]="['/p', project.key, 'backlog']" routerLinkActive="nav-active" class="nav-link h-8">
+            <a
+              [routerLink]="['/p', project.key, 'backlog']"
+              routerLinkActive="nav-active"
+              class="nav-link h-8"
+            >
               <app-icon name="layers" [size]="16" /> Бэклог
             </a>
-            <a [routerLink]="['/p', project.key, 'settings']" routerLinkActive="nav-active" class="nav-link h-8">
+            <a
+              [routerLink]="['/p', project.key, 'settings']"
+              routerLinkActive="nav-active"
+              class="nav-link h-8"
+            >
               <app-icon name="sliders" [size]="16" /> Настройки проекта
             </a>
           </div>
@@ -117,7 +145,9 @@
   >
     <app-icon name="refresh" />
     <span class="flex-1">Доступна новая версия</span>
-    <button type="button" class="font-semibold underline" (click)="pwa.applyUpdate()">Обновить</button>
+    <button type="button" class="font-semibold underline" (click)="pwa.applyUpdate()">
+      Обновить
+    </button>
   </div>
 }
 

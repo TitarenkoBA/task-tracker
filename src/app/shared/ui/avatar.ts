@@ -35,8 +35,11 @@ export class Avatar {
   readonly size = input<'sm' | 'md' | 'lg'>('md');
 
   protected readonly letters = computed(() => initials(this.person()?.name ?? ''));
-  protected readonly colorClass = computed(() => COLOR_CLASSES[this.person()?.color ?? 'indigo'].solid);
+  protected readonly colorClass = computed(
+    () => COLOR_CLASSES[this.person()?.color ?? 'indigo'].solid,
+  );
   protected readonly sizeClass = computed(
-    () => ({ sm: 'size-6 text-[10px]', md: 'size-8 text-xs', lg: 'size-12 text-base' })[this.size()],
+    () =>
+      ({ sm: 'size-6 text-[10px]', md: 'size-8 text-xs', lg: 'size-12 text-base' })[this.size()],
   );
 }

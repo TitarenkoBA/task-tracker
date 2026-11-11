@@ -21,23 +21,32 @@ import { PriorityIcon, TypeIcon } from '../../shared/ui/issue-badges';
       [class.opacity-70]="done()"
     >
       @if (epic(); as e) {
-        <span class="chip mb-2 h-5 max-w-full bg-violet-100 text-[11px] text-violet-700 dark:bg-violet-950 dark:text-violet-300">
+        <span
+          class="chip mb-2 h-5 max-w-full bg-violet-100 text-[11px] text-violet-700 dark:bg-violet-950 dark:text-violet-300"
+        >
           <span class="truncate">{{ e.title }}</span>
         </span>
       }
-      <p class="text-sm leading-snug font-medium" [class.line-through]="done()">{{ issue().title }}</p>
+      <p class="text-sm leading-snug font-medium" [class.line-through]="done()">
+        {{ issue().title }}
+      </p>
 
       @if (issue().labels.length) {
         <div class="mt-2 flex flex-wrap gap-1">
           @for (label of issue().labels.slice(0, 3); track label) {
-            <span class="chip h-5 bg-slate-100 text-[11px] text-slate-600 dark:bg-slate-800 dark:text-slate-300">{{ label }}</span>
+            <span
+              class="chip h-5 bg-slate-100 text-[11px] text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+              >{{ label }}</span
+            >
           }
         </div>
       }
 
       <div class="mt-3 flex items-center gap-2">
         <app-type-icon [type]="issue().type" />
-        <span class="font-mono text-xs text-slate-500" [class.line-through]="done()">{{ key() }}</span>
+        <span class="font-mono text-xs text-slate-500" [class.line-through]="done()">{{
+          key()
+        }}</span>
         @if (subtasks().total) {
           <span class="inline-flex items-center gap-0.5 text-xs text-slate-500" title="Подзадачи">
             <app-icon name="subtask" [size]="14" /> {{ subtasks().done }}/{{ subtasks().total }}
@@ -46,7 +55,13 @@ import { PriorityIcon, TypeIcon } from '../../shared/ui/issue-badges';
         @if (issue().dueDate; as due) {
           <span
             class="inline-flex items-center gap-0.5 text-xs"
-            [class]="due$() === 'overdue' ? 'text-rose-600 font-medium' : due$() === 'soon' ? 'text-amber-600' : 'text-slate-500'"
+            [class]="
+              due$() === 'overdue'
+                ? 'text-rose-600 font-medium'
+                : due$() === 'soon'
+                  ? 'text-amber-600'
+                  : 'text-slate-500'
+            "
             title="Срок"
           >
             <app-icon name="calendar" [size]="13" /> {{ formatDate(due) }}
@@ -54,7 +69,10 @@ import { PriorityIcon, TypeIcon } from '../../shared/ui/issue-badges';
         }
         <span class="ml-auto flex items-center gap-1.5">
           @if (issue().storyPoints !== null) {
-            <span class="flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-100 px-1.5 text-[11px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300" title="Story points">
+            <span
+              class="flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-100 px-1.5 text-[11px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+              title="Story points"
+            >
               {{ issue().storyPoints }}
             </span>
           }
