@@ -15,8 +15,9 @@ import {
   linkedSignal,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { COLOR_CLASSES, STATUS_CATEGORIES } from '../../core/models/catalog';
-import { StatusCategory, WorkflowStatus } from '../../core/models/entities';
+import { I18n, TranslatePipe } from '../../core/i18n/i18n.service';
+import { COLOR_CLASSES, STATUS_CATEGORIES, STATUS_CATEGORY_LIST } from '../../core/models/catalog';
+import { WorkflowStatus } from '../../core/models/entities';
 import { IssueService } from '../../core/services/issue.service';
 import { ProjectService } from '../../core/services/project.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -38,6 +39,7 @@ import { ProjectSwitcher } from './project-switcher';
     PageHeader,
     ProjectSwitcher,
     Icon,
+    TranslatePipe,
     EmptyState,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -54,7 +56,8 @@ export class ProjectSettingsPage {
 
   protected readonly colors = COLOR_CLASSES;
   protected readonly categoryInfo = STATUS_CATEGORIES;
-  protected readonly categoryList = Object.keys(STATUS_CATEGORIES) as StatusCategory[];
+  protected readonly categoryList = STATUS_CATEGORY_LIST;
+  protected readonly i18n = inject(I18n);
 
   protected readonly project = computed(() => this.projects.byKey(this.projectKey()));
 
@@ -90,7 +93,11 @@ export class ProjectSettingsPage {
   protected addStatus(): void {
     this.statuses.update((list) => [
       ...list,
-      { id: crypto.randomUUID().slice(0, 8), name: 'Новый статус', category: 'in_progress' },
+      {
+        id: crypto.randomUUID().slice(0, 8),
+        name: this.i18n.t('projectSettings.newStatus'),
+        category: 'in_progress',
+      },
     ]);
   }
 
@@ -111,29 +118,29 @@ export class ProjectSettingsPage {
     if (!project) return;
     const list = this.statuses().map((s) => ({ ...s, name: s.name.trim() }));
     if (list.some((s) => !s.name)) {
-      this.toasts.error('У каждого статуса должно быть название');
+      this.toasts.error(this.i18n.t('projectSettings.statusNameRequired'));
       return;
     }
     if (!list.some((s) => s.category === 'done')) {
-      this.toasts.error('Нужен хотя бы один статус с категорией «Готово»');
+      this.toasts.error(this.i18n.t('projectSettings.doneRequired'));
       return;
     }
     this.projects.updateStatuses(project.id, list);
-    this.toasts.success('Статусы сохранены');
+    this.toasts.success(this.i18n.t('projectSettings.saved'));
   }
 
   protected async remove(): Promise<void> {
     const project = this.project();
     if (!project) return;
     const ok = await this.dialogs.confirm({
-      title: `Удалить проект «${project.name}»?`,
-      message: 'Будут удалены все задачи, спринты и комментарии проекта. Это нельзя отменить.',
-      confirmLabel: 'Удалить проект',
+      title: this.i18n.t('projectSettings.deleteTitle', { name: project.name }),
+      message: this.i18n.t('projectSettings.deleteText'),
+      confirmLabel: this.i18n.t('projectSettings.delete'),
       danger: true,
     });
     if (!ok) return;
     this.projects.remove(project.id);
-    this.toasts.success('Проект удалён');
+    this.toasts.success(this.i18n.t('projectSettings.deleted'));
     void this.router.navigate(['/projects']);
   }
 }

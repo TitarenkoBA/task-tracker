@@ -6,6 +6,7 @@ import { SprintService } from '../../core/services/sprint.service';
 import { ToastService } from '../../core/services/toast.service';
 import { todayIso } from '../../core/utils/dates';
 import { DialogFrame } from '../../shared/dialog/dialog-frame';
+import { I18n, TranslatePipe } from '../../core/i18n/i18n.service';
 
 export interface SprintFormData {
   sprint: Sprint;
@@ -22,16 +23,18 @@ function addDays(iso: string, days: number): string {
 /** Запуск или редактирование спринта: название, цель, даты. */
 @Component({
   selector: 'app-sprint-form-dialog',
-  imports: [DialogFrame],
+  imports: [DialogFrame, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-dialog-frame [title]="data.mode === 'start' ? 'Начать спринт' : 'Спринт'">
+    <app-dialog-frame [title]="(data.mode === 'start' ? 'sprint.startTitle' : 'sprint.title') | t">
       <form id="sprint-form" class="space-y-4" (submit)="$event.preventDefault(); submit()">
         @if (data.mode === 'start') {
-          <p class="text-sm text-slate-500">Задач в спринте: {{ issueCount() }}</p>
+          <p class="text-sm text-slate-500">
+            {{ 'sprint.issueCount' | t: { count: issueCount() } }}
+          </p>
         }
         <div>
-          <label class="label" for="sf-name">Название</label>
+          <label class="label" for="sf-name">{{ 'sprint.name' | t }}</label>
           <input
             id="sf-name"
             class="input"
@@ -41,7 +44,7 @@ function addDays(iso: string, days: number): string {
         </div>
         @if (data.sprint.state !== 'planned' || data.mode === 'start') {
           <fieldset>
-            <legend class="label">Длительность</legend>
+            <legend class="label">{{ 'sprint.duration' | t }}</legend>
             <div class="flex flex-wrap gap-2">
               @for (w of [1, 2, 3, 4]; track w) {
                 <button
@@ -49,14 +52,14 @@ function addDays(iso: string, days: number): string {
                   class="chip h-8 border border-slate-200 px-3 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
                   (click)="setWeeks(w)"
                 >
-                  {{ w }} нед.
+                  {{ 'sprint.weeks' | t: { count: w } }}
                 </button>
               }
             </div>
           </fieldset>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="label" for="sf-start">Начало</label>
+              <label class="label" for="sf-start">{{ 'sprint.startDate' | t }}</label>
               <input
                 id="sf-start"
                 class="input"
@@ -66,7 +69,7 @@ function addDays(iso: string, days: number): string {
               />
             </div>
             <div>
-              <label class="label" for="sf-end">Окончание</label>
+              <label class="label" for="sf-end">{{ 'sprint.endDate' | t }}</label>
               <input
                 id="sf-end"
                 class="input"
@@ -77,25 +80,27 @@ function addDays(iso: string, days: number): string {
             </div>
           </div>
           @if (dateError()) {
-            <p class="text-xs text-rose-600">{{ dateError() }}</p>
+            <p class="text-xs text-rose-600">{{ dateError()! | t }}</p>
           }
         }
         <div>
-          <label class="label" for="sf-goal">Цель спринта</label>
+          <label class="label" for="sf-goal">{{ 'sprint.goal' | t }}</label>
           <textarea
             id="sf-goal"
             class="input"
             rows="2"
-            placeholder="Чего хотим достичь?"
+            [placeholder]="'sprint.goalPlaceholder' | t"
             [value]="goal()"
             (input)="goal.set($any($event.target).value)"
           ></textarea>
         </div>
       </form>
       <ng-container footer>
-        <button type="button" class="btn-secondary" (click)="ref.close()">Отмена</button>
+        <button type="button" class="btn-secondary" (click)="ref.close()">
+          {{ 'common.cancel' | t }}
+        </button>
         <button type="submit" form="sprint-form" class="btn-primary">
-          {{ data.mode === 'start' ? 'Начать' : 'Сохранить' }}
+          {{ (data.mode === 'start' ? 'sprint.start' : 'common.save') | t }}
         </button>
       </ng-container>
     </app-dialog-frame>
@@ -107,6 +112,7 @@ export class SprintFormDialog {
   private readonly sprints = inject(SprintService);
   private readonly issues = inject(IssueService);
   private readonly toasts = inject(ToastService);
+  private readonly i18n = inject(I18n);
 
   protected readonly name = signal(this.data.sprint.name);
   protected readonly goal = signal(this.data.sprint.goal);
@@ -117,9 +123,9 @@ export class SprintFormDialog {
   );
   protected readonly dateError = computed(() =>
     !this.startDate() || !this.endDate()
-      ? 'Укажите даты'
+      ? ('sprint.datesRequired' as const)
       : this.endDate() < this.startDate()
-        ? 'Окончание раньше начала'
+        ? ('sprint.endBeforeStart' as const)
         : null,
   );
 
@@ -139,7 +145,7 @@ export class SprintFormDialog {
       });
       if (this.data.mode === 'start') {
         this.sprints.start(id, { startDate: this.startDate(), endDate: this.endDate() });
-        this.toasts.success('Спринт начат');
+        this.toasts.success(this.i18n.t('sprint.started'));
       }
       this.ref.close(true);
     } catch (error) {
@@ -151,39 +157,43 @@ export class SprintFormDialog {
 /** Завершение спринта: куда перенести незавершённые задачи. */
 @Component({
   selector: 'app-sprint-complete-dialog',
-  imports: [DialogFrame],
+  imports: [DialogFrame, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-dialog-frame [title]="'Завершить ' + sprint.name">
+    <app-dialog-frame [title]="'sprint.completeTitle' | t: { name: sprint.name }">
       <div class="space-y-4 text-sm">
         <div class="grid grid-cols-2 gap-3">
           <div class="rounded-xl bg-emerald-50 p-3 dark:bg-emerald-950/50">
             <p class="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
               {{ stats().done }}
             </p>
-            <p class="text-emerald-700/80 dark:text-emerald-400/80">готово</p>
+            <p class="text-emerald-700/80 dark:text-emerald-400/80">{{ 'sprint.done' | t }}</p>
           </div>
           <div class="rounded-xl bg-amber-50 p-3 dark:bg-amber-950/50">
             <p class="text-2xl font-bold text-amber-700 dark:text-amber-400">{{ stats().open }}</p>
-            <p class="text-amber-700/80 dark:text-amber-400/80">не завершено</p>
+            <p class="text-amber-700/80 dark:text-amber-400/80">{{ 'sprint.open' | t }}</p>
           </div>
         </div>
         @if (stats().open) {
           <div>
-            <label class="label" for="sc-target">Перенести незавершённые задачи в</label>
+            <label class="label" for="sc-target">{{ 'sprint.moveTo' | t }}</label>
             <select id="sc-target" class="input" (change)="target.set($any($event.target).value)">
-              <option value="">Бэклог</option>
+              <option value="">{{ 'common.backlog' | t }}</option>
               @for (s of targets(); track s.id) {
                 <option [value]="s.id">{{ s.name }}</option>
               }
-              <option value="__new">Новый спринт</option>
+              <option value="__new">{{ 'sprint.newSprint' | t }}</option>
             </select>
           </div>
         }
       </div>
       <ng-container footer>
-        <button type="button" class="btn-secondary" (click)="ref.close()">Отмена</button>
-        <button type="button" class="btn-primary" (click)="complete()">Завершить спринт</button>
+        <button type="button" class="btn-secondary" (click)="ref.close()">
+          {{ 'common.cancel' | t }}
+        </button>
+        <button type="button" class="btn-primary" (click)="complete()">
+          {{ 'sprint.complete' | t }}
+        </button>
       </ng-container>
     </app-dialog-frame>
   `,
@@ -194,6 +204,7 @@ export class SprintCompleteDialog {
   private readonly sprints = inject(SprintService);
   private readonly issues = inject(IssueService);
   private readonly toasts = inject(ToastService);
+  private readonly i18n = inject(I18n);
 
   protected readonly target = signal('');
   protected readonly targets = computed(() =>
@@ -209,7 +220,11 @@ export class SprintCompleteDialog {
     let target: string | null = this.target() || null;
     if (target === '__new') target = this.sprints.create(this.sprint.projectId).id;
     const moved = this.sprints.complete(this.sprint.id, target);
-    this.toasts.success(moved ? `Спринт завершён, перенесено задач: ${moved}` : 'Спринт завершён');
+    this.toasts.success(
+      moved
+        ? this.i18n.t('sprint.completedMoved', { count: moved })
+        : this.i18n.t('sprint.completed'),
+    );
     this.ref.close(true);
   }
 }

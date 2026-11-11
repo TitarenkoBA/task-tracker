@@ -21,13 +21,7 @@ export interface IssueFilter {
 
 export type IssueSort = 'updated' | 'created' | 'priority' | 'due' | 'key';
 
-export const SORT_LABELS: Record<IssueSort, string> = {
-  updated: 'Недавно изменённые',
-  created: 'Новые',
-  priority: 'По приоритету',
-  due: 'По сроку',
-  key: 'По ключу',
-};
+export const SORT_LIST: IssueSort[] = ['updated', 'created', 'priority', 'due', 'key'];
 
 export function emptyFilter(): IssueFilter {
   return {

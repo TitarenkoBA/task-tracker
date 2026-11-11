@@ -1,8 +1,8 @@
-<app-page-header title="Задачи">
+<app-page-header [title]="'nav.issues' | t">
   <div class="mx-auto max-w-5xl px-4 pb-3 lg:px-8">
     <div class="flex gap-2">
       <label class="relative flex-1">
-        <span class="sr-only">Поиск задач</span>
+        <span class="sr-only">{{ 'issues.searchLabel' | t }}</span>
         <app-icon
           name="search"
           [size]="18"
@@ -12,7 +12,7 @@
           #search
           class="input pl-10"
           type="search"
-          placeholder="Ключ, название, описание или метка"
+          [placeholder]="'issues.searchPlaceholder' | t"
           enterkeyhint="search"
           [value]="state.filter().query"
           (input)="set('query', $any($event.target).value)"
@@ -25,7 +25,7 @@
         (click)="state.panelOpen.set(!state.panelOpen())"
       >
         <app-icon name="filter" [size]="18" />
-        <span class="hidden sm:inline">Фильтры</span>
+        <span class="hidden sm:inline">{{ 'issues.filters' | t }}</span>
         @if (filterCount()) {
           <span
             class="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-brand-600 text-[11px] font-bold text-white"
@@ -40,10 +40,10 @@
       <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
         <select
           class="input"
-          aria-label="Проект"
+          [attr.aria-label]="'field.project' | t"
           (change)="set('projectId', $any($event.target).value)"
         >
-          <option value="">Все проекты</option>
+          <option value="">{{ 'issues.allProjects' | t }}</option>
           @for (p of projects.projects(); track p.id) {
             <option [value]="p.id" [selected]="state.filter().projectId === p.id">
               {{ p.name }}
@@ -52,67 +52,79 @@
         </select>
         <select
           class="input"
-          aria-label="Статус"
+          [attr.aria-label]="'field.statusId' | t"
           (change)="set('category', $any($event.target).value)"
         >
-          <option value="">Любой статус</option>
+          <option value="">{{ 'issues.anyStatus' | t }}</option>
           @for (c of categoryList; track c) {
             <option [value]="c" [selected]="state.filter().category === c">
-              {{ categoryInfo[c].label }}
+              {{ i18n.category(c) }}
             </option>
           }
         </select>
         <select
           class="input"
-          aria-label="Исполнитель"
+          [attr.aria-label]="'field.assigneeId' | t"
           (change)="set('assignee', $any($event.target).value)"
         >
-          <option value="">Любой исполнитель</option>
-          <option value="me" [selected]="state.filter().assignee === 'me'">Мои задачи</option>
-          <option value="none" [selected]="state.filter().assignee === 'none'">Не назначены</option>
+          <option value="">{{ 'issues.anyAssignee' | t }}</option>
+          <option value="me" [selected]="state.filter().assignee === 'me'">
+            {{ 'issues.mine' | t }}
+          </option>
+          <option value="none" [selected]="state.filter().assignee === 'none'">
+            {{ 'issues.unassigned' | t }}
+          </option>
           @for (p of people.people(); track p.id) {
             <option [value]="p.id" [selected]="state.filter().assignee === p.id">
               {{ p.name }}
             </option>
           }
         </select>
-        <select class="input" aria-label="Тип" (change)="set('type', $any($event.target).value)">
-          <option value="">Любой тип</option>
+        <select
+          class="input"
+          [attr.aria-label]="'field.type' | t"
+          (change)="set('type', $any($event.target).value)"
+        >
+          <option value="">{{ 'issues.anyType' | t }}</option>
           @for (t of typeList; track t) {
             <option [value]="t" [selected]="state.filter().type === t">
-              {{ typeInfo[t].label }}
+              {{ i18n.issueType(t) }}
             </option>
           }
         </select>
         <select
           class="input"
-          aria-label="Приоритет"
+          [attr.aria-label]="'field.priority' | t"
           (change)="set('priority', $any($event.target).value)"
         >
-          <option value="">Любой приоритет</option>
+          <option value="">{{ 'issues.anyPriority' | t }}</option>
           @for (p of priorityOrder; track p) {
             <option [value]="p" [selected]="state.filter().priority === p">
-              {{ priorityInfo[p].label }}
+              {{ i18n.priority(p) }}
             </option>
           }
         </select>
-        <select class="input" aria-label="Метка" (change)="set('label', $any($event.target).value)">
-          <option value="">Любая метка</option>
+        <select
+          class="input"
+          [attr.aria-label]="'field.labels' | t"
+          (change)="set('label', $any($event.target).value)"
+        >
+          <option value="">{{ 'issues.anyLabel' | t }}</option>
           @for (l of allLabels(); track l) {
             <option [value]="l" [selected]="state.filter().label === l">{{ l }}</option>
           }
         </select>
         <select
           class="input"
-          aria-label="Сортировка"
+          [attr.aria-label]="'issues.sort' | t"
           (change)="state.sort.set($any($event.target).value)"
         >
           @for (s of sortList; track s) {
-            <option [value]="s" [selected]="state.sort() === s">{{ sortLabels[s] }}</option>
+            <option [value]="s" [selected]="state.sort() === s">{{ sortLabel(s) | t }}</option>
           }
         </select>
         <button type="button" class="btn-ghost" [disabled]="!filterCount()" (click)="reset()">
-          Сбросить фильтры
+          {{ 'issues.resetFilters' | t }}
         </button>
       </div>
     }
@@ -121,7 +133,9 @@
 
 <div class="mx-auto max-w-5xl px-4 py-3 lg:px-8">
   @if (results().length) {
-    <p class="mb-2 px-1 text-xs text-slate-500">Найдено: {{ results().length }}</p>
+    <p class="mb-2 px-1 text-xs text-slate-500">
+      {{ 'issues.found' | t: { count: results().length } }}
+    </p>
     <div class="card divide-y divide-slate-100 overflow-hidden dark:divide-slate-800">
       @for (issue of visible(); track issue.id) {
         <app-issue-row [issue]="issue" />
@@ -133,20 +147,18 @@
         class="btn-secondary mx-auto mt-4 flex"
         (click)="limit.set(limit() + 100)"
       >
-        Показать ещё ({{ results().length - visible().length }})
+        {{ 'issues.showMore' | t: { count: results().length - visible().length } }}
       </button>
     }
   } @else {
-    <app-empty-state
-      icon="search"
-      title="Ничего не найдено"
-      text="Попробуйте изменить запрос или сбросить фильтры."
-    >
+    <app-empty-state icon="search" [title]="'issues.nothing' | t" [text]="'issues.nothingText' | t">
       @if (filterCount() || state.filter().query) {
-        <button type="button" class="btn-secondary" (click)="reset()">Сбросить</button>
+        <button type="button" class="btn-secondary" (click)="reset()">
+          {{ 'common.reset' | t }}
+        </button>
       }
       <button type="button" class="btn-primary" (click)="actions.createIssue()">
-        <app-icon name="plus" [size]="18" /> Создать задачу
+        <app-icon name="plus" [size]="18" /> {{ 'common.createIssue' | t }}
       </button>
     </app-empty-state>
   }

@@ -2,14 +2,8 @@ import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
 import { Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import {
-  FIELD_LABELS,
-  ISSUE_TYPES,
-  PRIORITIES,
-  PRIORITY_ORDER,
-  STATUS_CATEGORIES,
-  TOP_LEVEL_TYPES,
-} from '../../core/models/catalog';
+import { I18n, TranslatePipe } from '../../core/i18n/i18n.service';
+import { PRIORITY_ORDER, STATUS_CATEGORIES, TOP_LEVEL_TYPES } from '../../core/models/catalog';
 import { Activity, Comment, EntityPatch, Issue } from '../../core/models/entities';
 import { IssueService } from '../../core/services/issue.service';
 import { PeopleService } from '../../core/services/people.service';
@@ -23,6 +17,8 @@ import { EmptyState } from '../../shared/ui/empty-state';
 import { Icon } from '../../shared/ui/icon';
 import { TypeIcon } from '../../shared/ui/issue-badges';
 import { LabelsInput } from '../../shared/ui/labels-input';
+import { Markdown } from '../../shared/ui/markdown';
+import { MarkdownEditor } from '../../shared/ui/markdown-editor';
 import { ActionsService } from '../actions.service';
 import { IssueRow } from './issue-row';
 
@@ -40,6 +36,9 @@ import { IssueRow } from './issue-row';
     TypeIcon,
     LabelsInput,
     IssueRow,
+    Markdown,
+    MarkdownEditor,
+    TranslatePipe,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './issue-detail-page.html',
@@ -55,11 +54,10 @@ export class IssueDetailPage {
   private readonly toasts = inject(ToastService);
   private readonly router = inject(Router);
   private readonly location = inject(Location);
+  protected readonly i18n = inject(I18n);
   protected readonly people = inject(PeopleService);
   protected readonly actions = inject(ActionsService);
 
-  protected readonly typeInfo = ISSUE_TYPES;
-  protected readonly priorityInfo = PRIORITIES;
   protected readonly priorityOrder = PRIORITY_ORDER;
   protected readonly topLevelTypes = TOP_LEVEL_TYPES;
   protected readonly categories = STATUS_CATEGORIES;
@@ -116,8 +114,11 @@ export class IssueDetailPage {
   );
 
   protected readonly tab = signal<'comments' | 'history'>('comments');
-  protected readonly editingDescription = signal(false);
+  /** Черновик описания; `null` — описание не редактируется. */
+  protected readonly descriptionDraft = signal<string | null>(null);
+  protected readonly commentDraft = signal('');
   protected readonly editingCommentId = signal<string | null>(null);
+  protected readonly commentEditDraft = signal('');
 
   protected readonly formatDateTime = formatDateTime;
   protected readonly formatRelative = formatRelative;
@@ -143,9 +144,23 @@ export class IssueDetailPage {
     this.save({ title });
   }
 
-  protected saveDescription(value: string): void {
-    this.save({ description: value.trim() });
-    this.editingDescription.set(false);
+  // Описание ---------------------------------------------------------------
+
+  protected editDescription(): void {
+    this.descriptionDraft.set(this.issue()?.description ?? '');
+  }
+
+  /** Клик по описанию открывает редактор, но клик по ссылке — просто переходит по ней. */
+  protected onDescriptionClick(event: MouseEvent): void {
+    if ((event.target as HTMLElement).closest('a')) return;
+    this.editDescription();
+  }
+
+  protected saveDescription(): void {
+    const draft = this.descriptionDraft();
+    if (draft === null) return;
+    this.save({ description: draft.trim() });
+    this.descriptionDraft.set(null);
   }
 
   protected setPoints(value: string): void {
@@ -156,6 +171,8 @@ export class IssueDetailPage {
     const me = this.people.me();
     if (me) this.save({ assigneeId: me.id });
   }
+
+  // Дочерние задачи --------------------------------------------------------
 
   protected addSubtask(input: HTMLInputElement): void {
     const issue = this.issue();
@@ -184,47 +201,45 @@ export class IssueDetailPage {
 
   // Комментарии ------------------------------------------------------------
 
-  protected addComment(field: HTMLTextAreaElement): void {
+  protected addComment(): void {
     const issue = this.issue();
-    if (!issue || !field.value.trim()) return;
-    this.issues.addComment(issue.id, field.value);
-    field.value = '';
+    if (!issue || !this.commentDraft().trim()) return;
+    this.issues.addComment(issue.id, this.commentDraft());
+    this.commentDraft.set('');
   }
 
-  protected onCommentKeydown(event: KeyboardEvent, field: HTMLTextAreaElement): void {
-    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
-      event.preventDefault();
-      this.addComment(field);
-    }
+  protected editComment(comment: Comment): void {
+    this.commentEditDraft.set(comment.body);
+    this.editingCommentId.set(comment.id);
   }
 
-  protected saveComment(comment: Comment, value: string): void {
-    this.issues.updateComment(comment.id, value);
+  protected saveComment(comment: Comment): void {
+    this.issues.updateComment(comment.id, this.commentEditDraft());
     this.editingCommentId.set(null);
   }
 
   protected async removeComment(comment: Comment): Promise<void> {
     const ok = await this.dialogs.confirm({
-      title: 'Удалить комментарий?',
-      message: 'Это действие нельзя отменить.',
-      confirmLabel: 'Удалить',
+      title: this.i18n.t('issue.removeCommentTitle'),
+      message: this.i18n.t('issue.irreversible'),
+      confirmLabel: this.i18n.t('common.delete'),
       danger: true,
     });
     if (ok) this.issues.removeComment(comment.id);
   }
 
   protected personName(id: string | null): string {
-    return this.people.get(id)?.name ?? 'Кто-то';
+    return this.people.get(id)?.name ?? this.i18n.t('common.someone');
   }
 
   protected describe(entry: Activity): string {
     switch (entry.kind) {
       case 'created':
-        return 'создал(а) задачу';
+        return this.i18n.t('issue.activityCreated');
       case 'commented':
-        return 'оставил(а) комментарий';
+        return this.i18n.t('issue.activityCommented');
       default:
-        return `изменил(а) поле «${FIELD_LABELS[entry.field ?? ''] ?? entry.field}»`;
+        return this.i18n.t('issue.activityChanged', { field: this.i18n.field(entry.field ?? '') });
     }
   }
 
@@ -238,9 +253,9 @@ export class IssueDetailPage {
   protected async copyLink(): Promise<void> {
     try {
       await navigator.clipboard.writeText(location.href);
-      this.toasts.success('Ссылка скопирована');
+      this.toasts.success(this.i18n.t('issue.linkCopied'));
     } catch {
-      this.toasts.error('Не удалось скопировать ссылку');
+      this.toasts.error(this.i18n.t('issue.linkFailed'));
     }
   }
 
@@ -249,17 +264,18 @@ export class IssueDetailPage {
     if (!issue) return;
     const subtasks = this.children().filter((c) => c.type === 'subtask').length;
     const ok = await this.dialogs.confirm({
-      title: `Удалить ${this.key()}?`,
+      title: this.i18n.t('issue.removeTitle', { key: this.key() }),
       message: subtasks
-        ? `Задача и её подзадачи (${subtasks}) будут удалены.`
-        : 'Задача будет удалена вместе с комментариями.',
-      confirmLabel: 'Удалить',
+        ? this.i18n.t('issue.removeWithSubtasks', { count: subtasks })
+        : this.i18n.t('issue.removeText'),
+      confirmLabel: this.i18n.t('common.delete'),
       danger: true,
     });
     if (!ok) return;
     const project = this.project();
+    const key = this.key();
     this.issues.remove(issue.id);
-    this.toasts.success(`${this.key()} удалена`);
+    this.toasts.success(this.i18n.t('issue.removed', { key }));
     void this.router.navigate(project ? ['/p', project.key, 'board'] : ['/']);
   }
 }

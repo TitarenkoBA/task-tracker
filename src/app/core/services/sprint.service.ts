@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { DataStore } from '../data/data-store';
+import { I18n } from '../i18n/i18n.service';
 import { EntityId, Sprint } from '../models/entities';
 import { IssueService } from './issue.service';
 import { ProjectService } from './project.service';
@@ -12,6 +13,7 @@ export class SprintService {
   private readonly store = inject(DataStore);
   private readonly projects = inject(ProjectService);
   private readonly issues = inject(IssueService);
+  private readonly i18n = inject(I18n);
 
   readonly sprints = this.store.list('sprints');
 
@@ -32,13 +34,13 @@ export class SprintService {
 
   create(projectId: EntityId, name?: string): Sprint {
     const project = this.projects.get(projectId);
-    if (!project) throw new Error('Проект не найден');
+    if (!project) throw new Error(this.i18n.t('error.projectNotFound'));
     const count = this.store
       .list('sprints')()
       .filter((s) => s.projectId === projectId).length;
     return this.store.create('sprints', {
       projectId,
-      name: name?.trim() || `${project.key} Спринт ${count + 1}`,
+      name: name?.trim() || this.i18n.t('sprint.defaultName', { key: project.key, n: count + 1 }),
       goal: '',
       state: 'planned',
       startDate: null,
@@ -56,9 +58,9 @@ export class SprintService {
   /** Запустить спринт. В проекте может быть только один активный спринт. */
   start(id: EntityId, dates: { startDate: string; endDate: string }): void {
     const sprint = this.get(id);
-    if (!sprint) throw new Error('Спринт не найден');
-    if (this.active(sprint.projectId)) throw new Error('В проекте уже есть активный спринт');
-    if (dates.endDate < dates.startDate) throw new Error('Дата окончания раньше даты начала');
+    if (!sprint) throw new Error(this.i18n.t('error.sprintNotFound'));
+    if (this.active(sprint.projectId)) throw new Error(this.i18n.t('error.sprintActive'));
+    if (dates.endDate < dates.startDate) throw new Error(this.i18n.t('error.sprintDates'));
     this.store.update('sprints', id, { ...dates, state: 'active' });
   }
 

@@ -1,4 +1,5 @@
 import { Injectable, effect, signal } from '@angular/core';
+import type { Lang } from '../i18n/lang';
 import { EntityId } from '../models/entities';
 
 export type ThemePreference = 'light' | 'dark' | 'system';
@@ -9,10 +10,18 @@ interface DeviceSettings {
   currentUserId: EntityId | null;
   /** Последний открытый проект — чтобы вкладки «Доска» и «Бэклог» знали, что показать. */
   lastProjectId: EntityId | null;
+  /** Язык интерфейса; 
+ull — определить по языку браузера. */
+  language: Lang | null;
 }
 
 const STORAGE_KEY = 'task-tracker.settings';
-const DEFAULTS: DeviceSettings = { theme: 'system', currentUserId: null, lastProjectId: null };
+const DEFAULTS: DeviceSettings = {
+  theme: 'system',
+  currentUserId: null,
+  lastProjectId: null,
+  language: null,
+};
 
 /**
  * Настройки конкретного устройства (тема, текущий пользователь).
@@ -26,6 +35,7 @@ export class SettingsService {
   readonly theme = () => this.state().theme;
   readonly currentUserId = () => this.state().currentUserId;
   readonly lastProjectId = () => this.state().lastProjectId;
+  readonly language = () => this.state().language;
 
   constructor() {
     effect(() => this.write(this.state()));

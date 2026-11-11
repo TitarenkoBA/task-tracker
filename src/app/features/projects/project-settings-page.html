@@ -1,5 +1,5 @@
 @if (project(); as project) {
-  <app-page-header title="Настройки проекта">
+  <app-page-header [title]="'nav.projectSettings' | t">
     <div class="mx-auto max-w-3xl px-4 pb-2 lg:px-8">
       <div class="-mt-2"><app-project-switcher [project]="project" page="settings" /></div>
     </div>
@@ -22,17 +22,16 @@
         }
       </div>
       <button type="button" class="btn-secondary h-9" (click)="edit()">
-        <app-icon name="pencil" [size]="16" /> Изменить
+        <app-icon name="pencil" [size]="16" /> {{ 'common.edit' | t }}
       </button>
     </section>
 
     <!-- Рабочий процесс -->
     <section>
-      <h2 class="section-title">Статусы и колонки доски</h2>
+      <h2 class="section-title">{{ 'projectSettings.statuses' | t }}</h2>
       <div class="card overflow-hidden">
         <p class="px-4 pt-4 text-sm text-slate-500">
-          Порядок статусов — это порядок колонок на доске. Категория определяет цвет и считается ли
-          задача завершённой.
+          {{ 'projectSettings.statusesHint' | t }}
         </p>
         <ol
           cdkDropList
@@ -48,7 +47,7 @@
                 type="button"
                 cdkDragHandle
                 class="btn-icon size-9 cursor-grab touch-none"
-                aria-label="Перетащить"
+                [attr.aria-label]="'projectSettings.drag' | t"
               >
                 <app-icon name="grip" [size]="18" [strokeWidth]="3" />
               </button>
@@ -58,31 +57,27 @@
               ></span>
               <input
                 class="input h-9 min-w-0 flex-1"
-                aria-label="Название статуса"
+                [attr.aria-label]="'projectSettings.statusName' | t"
                 [value]="status.name"
                 (input)="patchStatus(i, { name: $any($event.target).value })"
               />
               <select
                 class="input h-9 w-auto shrink-0"
-                aria-label="Категория"
+                [attr.aria-label]="'projectSettings.category' | t"
                 (change)="patchStatus(i, { category: $any($event.target).value })"
               >
                 @for (c of categoryList; track c) {
                   <option [value]="c" [selected]="status.category === c">
-                    {{ categoryInfo[c].label }}
+                    {{ i18n.category(c) }}
                   </option>
                 }
               </select>
               <button
                 type="button"
                 class="btn-icon size-9 hover:text-rose-600"
-                aria-label="Удалить статус"
+                [attr.aria-label]="'projectSettings.removeStatus' | t"
                 [disabled]="statuses().length <= 1"
-                [title]="
-                  counts().get(status.id)
-                    ? 'Задачи из этого статуса будут перенесены в первый статус'
-                    : ''
-                "
+                [title]="counts().get(status.id) ? ('projectSettings.removeStatusHint' | t) : ''"
                 (click)="removeStatus(i)"
               >
                 <app-icon name="trash" [size]="16" />
@@ -94,7 +89,7 @@
           class="flex flex-wrap items-center gap-2 border-t border-slate-100 p-3 dark:border-slate-800"
         >
           <button type="button" class="btn-ghost h-9" (click)="addStatus()">
-            <app-icon name="plus" [size]="16" /> Добавить статус
+            <app-icon name="plus" [size]="16" /> {{ 'projectSettings.addStatus' | t }}
           </button>
           @if (dirty()) {
             <button
@@ -102,10 +97,10 @@
               class="btn-ghost ml-auto h-9"
               (click)="statuses.set(project.statuses)"
             >
-              Отменить
+              {{ 'projectSettings.revert' | t }}
             </button>
             <button type="button" class="btn-primary h-9" (click)="saveStatuses()">
-              Сохранить
+              {{ 'common.save' | t }}
             </button>
           }
         </div>
@@ -114,18 +109,20 @@
 
     <!-- Опасная зона -->
     <section>
-      <h2 class="section-title">Опасная зона</h2>
+      <h2 class="section-title">{{ 'projectSettings.danger' | t }}</h2>
       <div class="card flex flex-wrap items-center gap-3 border-rose-200 p-4 dark:border-rose-900">
         <div class="flex-1 text-sm">
-          <p class="font-medium">Удалить проект</p>
-          <p class="text-slate-500">Вместе со всеми задачами и спринтами.</p>
+          <p class="font-medium">{{ 'projectSettings.delete' | t }}</p>
+          <p class="text-slate-500">{{ 'projectSettings.deleteHint' | t }}</p>
         </div>
-        <button type="button" class="btn-danger h-9" (click)="remove()">Удалить</button>
+        <button type="button" class="btn-danger h-9" (click)="remove()">
+          {{ 'common.delete' | t }}
+        </button>
       </div>
     </section>
   </div>
 } @else {
-  <app-empty-state icon="folder" title="Проект не найден">
-    <a routerLink="/projects" class="btn-primary">К списку проектов</a>
+  <app-empty-state icon="folder" [title]="'common.projectNotFound' | t">
+    <a routerLink="/projects" class="btn-primary">{{ 'common.toProjects' | t }}</a>
   </app-empty-state>
 }

@@ -1,6 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { DataStore } from '../../core/data/data-store';
-import { Person } from '../../core/models/entities';
+import { I18n, TranslatePipe } from '../../core/i18n/i18n.service';
+import { LANGUAGES, Lang } from '../../core/i18n/lang';
+import { TKey } from '../../core/i18n/ru';
+import { emptySnapshot, Person } from '../../core/models/entities';
 import { ExportImportService, ImportError } from '../../core/services/export-import.service';
 import { PeopleService } from '../../core/services/people.service';
 import { PwaService } from '../../core/services/pwa.service';
@@ -16,7 +19,7 @@ import { ImportDialog } from './import-dialog';
 
 @Component({
   selector: 'app-settings-page',
-  imports: [PageHeader, Avatar, Icon],
+  imports: [PageHeader, Avatar, Icon, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './settings-page.html',
 })
@@ -25,16 +28,18 @@ export class SettingsPage {
   protected readonly theme = inject(ThemeService);
   protected readonly pwa = inject(PwaService);
   protected readonly sync = inject(SyncService);
+  protected readonly i18n = inject(I18n);
   private readonly store = inject(DataStore);
   private readonly exporter = inject(ExportImportService);
   private readonly dialogs = inject(DialogService);
   private readonly toasts = inject(ToastService);
 
-  protected readonly themes: { value: ThemePreference; label: string; icon: string }[] = [
-    { value: 'light', label: 'Светлая', icon: 'sun' },
-    { value: 'dark', label: 'Тёмная', icon: 'moon' },
-    { value: 'system', label: 'Как в системе', icon: 'monitor' },
+  protected readonly themes: { value: ThemePreference; label: TKey; icon: string }[] = [
+    { value: 'light', label: 'settings.themeLight', icon: 'sun' },
+    { value: 'dark', label: 'settings.themeDark', icon: 'moon' },
+    { value: 'system', label: 'settings.themeSystem', icon: 'monitor' },
   ];
+  protected readonly languages = LANGUAGES;
 
   protected readonly storage = signal<{ used: number; quota: number; persisted: boolean } | null>(
     null,
@@ -47,6 +52,12 @@ export class SettingsPage {
 
   constructor() {
     void this.refreshStorage();
+  }
+
+  /** Переключить язык интерфейса. Стандартное имя профиля («Я» / «Me») тоже переводится. */
+  protected setLanguage(lang: Lang): void {
+    this.i18n.set(lang);
+    this.people.translateDefaultName();
   }
 
   // Профиль и участники ----------------------------------------------------
@@ -66,9 +77,9 @@ export class SettingsPage {
 
   protected async removePerson(person: Person): Promise<void> {
     const ok = await this.dialogs.confirm({
-      title: `Удалить «${person.name}»?`,
-      message: 'Задачи этого человека останутся, но станут неназначенными.',
-      confirmLabel: 'Удалить',
+      title: this.i18n.t('settings.removePersonTitle', { name: person.name }),
+      message: this.i18n.t('settings.removePersonText'),
+      confirmLabel: this.i18n.t('common.delete'),
       danger: true,
     });
     if (ok) this.people.remove(person.id);
@@ -78,7 +89,7 @@ export class SettingsPage {
 
   protected exportJson(): void {
     this.exporter.downloadJson();
-    this.toasts.success('Резервная копия сохранена');
+    this.toasts.success(this.i18n.t('settings.backupSaved'));
   }
 
   protected exportCsv(): void {
@@ -93,36 +104,30 @@ export class SettingsPage {
       const parsed = this.exporter.parse(await file.text());
       this.dialogs.open(ImportDialog, parsed);
     } catch (error) {
-      this.toasts.error(error instanceof ImportError ? error.message : 'Не удалось прочитать файл');
+      this.toasts.error(
+        error instanceof ImportError ? error.message : this.i18n.t('settings.fileUnreadable'),
+      );
     }
   }
 
   protected async resetAll(): Promise<void> {
     const ok = await this.dialogs.confirm({
-      title: 'Удалить все данные?',
-      message:
-        'Все проекты, задачи и комментарии на этом устройстве будут удалены без возможности восстановления. Сначала сделайте экспорт, если данные нужны.',
-      confirmLabel: 'Удалить всё',
+      title: this.i18n.t('settings.deleteAllTitle'),
+      message: this.i18n.t('settings.deleteAllText'),
+      confirmLabel: this.i18n.t('settings.deleteAllConfirm'),
       danger: true,
     });
     if (!ok) return;
-    await this.store.replaceAll({
-      projects: [],
-      issues: [],
-      sprints: [],
-      people: [],
-      comments: [],
-      activity: [],
-    });
+    await this.store.replaceAll(emptySnapshot());
     this.people.ensureMe();
-    this.toasts.success('Все данные удалены');
+    this.toasts.success(this.i18n.t('settings.deletedAll'));
   }
 
   /** Попросить браузер не удалять данные при нехватке места. */
   protected async persist(): Promise<void> {
     const granted = await navigator.storage?.persist?.();
-    if (granted) this.toasts.success('Браузер не будет удалять данные автоматически');
-    else this.toasts.show('Браузер отклонил запрос. Установите приложение — это обычно помогает.');
+    if (granted) this.toasts.success(this.i18n.t('settings.persistGranted'));
+    else this.toasts.show(this.i18n.t('settings.persistDenied'));
     await this.refreshStorage();
   }
 
@@ -136,9 +141,10 @@ export class SettingsPage {
   }
 
   protected formatBytes(bytes: number): string {
-    if (bytes < 1024) return `${bytes} Б`;
-    if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} КБ`;
-    if (bytes < 1024 ** 3) return `${(bytes / 1024 ** 2).toFixed(1)} МБ`;
-    return `${(bytes / 1024 ** 3).toFixed(1)} ГБ`;
+    const t = (key: TKey) => this.i18n.t(key);
+    if (bytes < 1024) return `${bytes} ${t('unit.b')}`;
+    if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} ${t('unit.kb')}`;
+    if (bytes < 1024 ** 3) return `${(bytes / 1024 ** 2).toFixed(1)} ${t('unit.mb')}`;
+    return `${(bytes / 1024 ** 3).toFixed(1)} ${t('unit.gb')}`;
   }
 }

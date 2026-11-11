@@ -1,5 +1,6 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { DataStore } from '../data/data-store';
+import { I18n } from '../i18n/i18n.service';
 import { defaultStatuses } from '../models/catalog';
 import { EntityId, Project, ProjectColor, WorkflowStatus } from '../models/entities';
 import { SettingsService } from './settings.service';
@@ -18,6 +19,7 @@ export const PROJECT_KEY_PATTERN = /^[A-Z][A-Z0-9]{1,9}$/;
 export class ProjectService {
   private readonly store = inject(DataStore);
   private readonly settings = inject(SettingsService);
+  private readonly i18n = inject(I18n);
 
   readonly projects = computed(() =>
     [...this.store.list('projects')()].sort((a, b) => a.name.localeCompare(b.name)),
@@ -56,10 +58,10 @@ export class ProjectService {
   /** Проверка ключа. Возвращает текст ошибки или `null`. */
   validateKey(key: string, exceptId?: EntityId): string | null {
     if (!PROJECT_KEY_PATTERN.test(key)) {
-      return 'От 2 до 10 латинских букв или цифр, первая — буква';
+      return this.i18n.t('error.keyFormat');
     }
     const existing = this.byKey(key);
-    if (existing && existing.id !== exceptId) return 'Такой ключ уже используется';
+    if (existing && existing.id !== exceptId) return this.i18n.t('error.keyTaken');
     return null;
   }
 
@@ -72,7 +74,7 @@ export class ProjectService {
       key,
       description: input.description?.trim() ?? '',
       color: input.color,
-      statuses: defaultStatuses(),
+      statuses: defaultStatuses((key) => this.i18n.t(key)),
       issueCounter: 0,
     });
   }
@@ -86,7 +88,7 @@ export class ProjectService {
    * переносятся в первый статус списка.
    */
   updateStatuses(id: EntityId, statuses: WorkflowStatus[]): void {
-    if (!statuses.length) throw new Error('Нужен хотя бы один статус');
+    if (!statuses.length) throw new Error(this.i18n.t('error.statusRequired'));
     const ids = new Set(statuses.map((s) => s.id));
     for (const issue of this.store.list('issues')()) {
       if (issue.projectId === id && !ids.has(issue.statusId)) {
@@ -99,7 +101,7 @@ export class ProjectService {
   /** Выдать следующий номер задачи в проекте. */
   nextIssueNumber(id: EntityId): number {
     const project = this.get(id);
-    if (!project) throw new Error('Проект не найден');
+    if (!project) throw new Error(this.i18n.t('error.projectNotFound'));
     const number = project.issueCounter + 1;
     this.store.update('projects', id, { issueCounter: number });
     return number;

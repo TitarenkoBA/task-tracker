@@ -1,11 +1,11 @@
 @if (project(); as project) {
-  <app-page-header title="Бэклог">
+  <app-page-header [title]="'common.backlog' | t">
     <div actions class="flex items-center gap-1">
       <a class="btn-ghost hidden sm:inline-flex" [routerLink]="['/p', project.key, 'board']">
-        <app-icon name="board" [size]="18" /> Доска
+        <app-icon name="board" [size]="18" /> {{ 'common.board' | t }}
       </a>
       <button type="button" class="btn-secondary" (click)="createSprint()">
-        <app-icon name="plus" [size]="18" /> Спринт
+        <app-icon name="plus" [size]="18" /> {{ 'backlog.addSprint' | t }}
       </button>
     </div>
 
@@ -13,7 +13,7 @@
       <div class="-mt-2 mb-1"><app-project-switcher [project]="project" page="backlog" /></div>
       <div class="no-scrollbar -mx-4 flex items-center gap-2 overflow-x-auto px-4 pt-2 pb-3">
         <label class="relative shrink-0">
-          <span class="sr-only">Поиск по бэклогу</span>
+          <span class="sr-only">{{ 'backlog.searchLabel' | t }}</span>
           <app-icon
             name="search"
             [size]="16"
@@ -22,7 +22,7 @@
           <input
             class="input h-9 w-40 pl-9 sm:w-56"
             type="search"
-            placeholder="Поиск"
+            [placeholder]="'common.search' | t"
             [value]="query()"
             (input)="query.set($any($event.target).value)"
           />
@@ -54,7 +54,7 @@
             type="button"
             class="btn-icon -ml-1 size-8"
             [attr.aria-expanded]="!collapsed().has(section.id)"
-            aria-label="Свернуть"
+            [attr.aria-label]="'backlog.collapse' | t"
             (click)="toggle(section.id)"
           >
             <app-icon
@@ -65,17 +65,18 @@
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-2">
               <h2 class="line-clamp-2 font-semibold break-words">
-                {{ section.sprint?.name ?? 'Бэклог' }}
+                {{ section.sprint?.name ?? ('common.backlog' | t) }}
               </h2>
               @if (section.sprint?.state === 'active') {
                 <span
                   class="chip h-5 bg-emerald-100 text-[11px] text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
-                  >Активный</span
+                  >{{ 'backlog.active' | t }}</span
                 >
               }
             </div>
             <p class="text-xs text-slate-500">
-              {{ section.issues.length }} задач · {{ section.points }} SP
+              {{ 'backlog.issueCount' | t: { count: section.issues.length } }} ·
+              {{ section.points }} SP
               @if (section.sprint?.startDate && section.sprint?.endDate) {
                 · {{ formatDate(section.sprint!.startDate!) }} –
                 {{ formatDate(section.sprint!.endDate!) }}
@@ -89,7 +90,7 @@
           @if (section.sprint; as sprint) {
             @if (sprint.state === 'active') {
               <button type="button" class="btn-secondary h-8 px-3" (click)="completeSprint(sprint)">
-                Завершить
+                {{ 'backlog.complete' | t }}
               </button>
             } @else {
               <button
@@ -98,13 +99,14 @@
                 [disabled]="!section.issues.length"
                 (click)="startSprint(sprint)"
               >
-                <app-icon name="play" [size]="14" /> <span class="hidden sm:inline">Начать</span>
+                <app-icon name="play" [size]="14" />
+                <span class="hidden sm:inline">{{ 'backlog.start' | t }}</span>
               </button>
             }
             <button
               type="button"
               class="btn-icon size-8"
-              aria-label="Действия со спринтом"
+              [attr.aria-label]="'backlog.sprintActions' | t"
               [cdkMenuTriggerFor]="sprintMenu"
             >
               <app-icon name="more" [size]="18" [strokeWidth]="3" />
@@ -112,14 +114,14 @@
             <ng-template #sprintMenu>
               <div cdkMenu class="menu">
                 <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="editSprint(sprint)">
-                  <app-icon name="pencil" [size]="16" /> Изменить
+                  <app-icon name="pencil" [size]="16" /> {{ 'common.edit' | t }}
                 </button>
                 <button
                   cdkMenuItem
                   class="menu-item text-rose-600!"
                   (cdkMenuItemTriggered)="removeSprint(sprint)"
                 >
-                  <app-icon name="trash" [size]="16" /> Удалить
+                  <app-icon name="trash" [size]="16" /> {{ 'common.delete' | t }}
                 </button>
               </div>
             </ng-template>
@@ -144,11 +146,7 @@
               />
             } @empty {
               <p class="px-4 py-4 text-center text-sm text-slate-400">
-                {{
-                  section.sprint
-                    ? 'Перетащите задачи из бэклога, чтобы спланировать спринт'
-                    : 'Бэклог пуст'
-                }}
+                {{ (section.sprint ? 'backlog.emptySprint' : 'backlog.empty') | t }}
               </p>
             }
           </div>
@@ -159,7 +157,7 @@
             <input
               #quick
               class="h-11 flex-1 bg-transparent text-base outline-none placeholder:text-slate-400 sm:text-sm"
-              placeholder="Быстро добавить задачу и нажать Enter"
+              [placeholder]="'backlog.quickAdd' | t"
               enterkeyhint="done"
               (keydown.enter)="quickCreate(section, quick)"
             />
@@ -169,7 +167,11 @@
     }
   </div>
 } @else {
-  <app-empty-state icon="folder" title="Проект не найден" text="Возможно, он был удалён.">
-    <a routerLink="/projects" class="btn-primary">К списку проектов</a>
+  <app-empty-state
+    icon="folder"
+    [title]="'common.projectNotFound' | t"
+    [text]="'common.projectNotFoundText' | t"
+  >
+    <a routerLink="/projects" class="btn-primary">{{ 'common.toProjects' | t }}</a>
   </app-empty-state>
 }

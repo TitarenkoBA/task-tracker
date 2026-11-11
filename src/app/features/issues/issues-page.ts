@@ -9,13 +9,9 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import {
-  ISSUE_TYPES,
-  PRIORITIES,
-  PRIORITY_ORDER,
-  STATUS_CATEGORIES,
-} from '../../core/models/catalog';
-import { IssueType, StatusCategory } from '../../core/models/entities';
+import { I18n, TranslatePipe } from '../../core/i18n/i18n.service';
+import { TKey } from '../../core/i18n/ru';
+import { ISSUE_TYPE_LIST, PRIORITY_ORDER, STATUS_CATEGORY_LIST } from '../../core/models/catalog';
 import { IssueService } from '../../core/services/issue.service';
 import { PeopleService } from '../../core/services/people.service';
 import { ProjectService } from '../../core/services/project.service';
@@ -26,7 +22,7 @@ import { ActionsService } from '../actions.service';
 import {
   IssueFilter,
   IssueSort,
-  SORT_LABELS,
+  SORT_LIST,
   activeFilterCount,
   emptyFilter,
   filterIssues,
@@ -39,7 +35,7 @@ const PAGE_SIZE = 100;
 
 @Component({
   selector: 'app-issues-page',
-  imports: [PageHeader, IssueRow, Icon, EmptyState],
+  imports: [PageHeader, IssueRow, Icon, EmptyState, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './issues-page.html',
 })
@@ -53,14 +49,15 @@ export class IssuesPage {
   protected readonly actions = inject(ActionsService);
   protected readonly state = inject(IssuesFilterState);
 
-  protected readonly typeInfo = ISSUE_TYPES;
-  protected readonly typeList = Object.keys(ISSUE_TYPES) as IssueType[];
-  protected readonly priorityInfo = PRIORITIES;
+  protected readonly i18n = inject(I18n);
+  protected readonly typeList = ISSUE_TYPE_LIST;
   protected readonly priorityOrder = PRIORITY_ORDER;
-  protected readonly categoryInfo = STATUS_CATEGORIES;
-  protected readonly categoryList = Object.keys(STATUS_CATEGORIES) as StatusCategory[];
-  protected readonly sortLabels = SORT_LABELS;
-  protected readonly sortList = Object.keys(SORT_LABELS) as IssueSort[];
+  protected readonly categoryList = STATUS_CATEGORY_LIST;
+  protected readonly sortList = SORT_LIST;
+
+  protected sortLabel(sort: IssueSort): TKey {
+    return `sort.${sort}` as TKey;
+  }
 
   protected readonly limit = signal(PAGE_SIZE);
   private readonly searchField = viewChild<ElementRef<HTMLInputElement>>('search');

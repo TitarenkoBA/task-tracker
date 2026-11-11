@@ -9,12 +9,8 @@ import {
   viewChild,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import {
-  ISSUE_TYPES,
-  PRIORITIES,
-  PRIORITY_ORDER,
-  TOP_LEVEL_TYPES,
-} from '../../core/models/catalog';
+import { I18n, TranslatePipe } from '../../core/i18n/i18n.service';
+import { PRIORITY_ORDER, TOP_LEVEL_TYPES } from '../../core/models/catalog';
 import { EntityId, Issue, IssuePriority, IssueType } from '../../core/models/entities';
 import { IssueService } from '../../core/services/issue.service';
 import { PeopleService } from '../../core/services/people.service';
@@ -25,6 +21,7 @@ import { DialogFrame } from '../../shared/dialog/dialog-frame';
 import { Icon } from '../../shared/ui/icon';
 import { TypeIcon } from '../../shared/ui/issue-badges';
 import { LabelsInput } from '../../shared/ui/labels-input';
+import { MarkdownEditor } from '../../shared/ui/markdown-editor';
 
 /** Начальные значения формы (например, при создании из колонки доски). */
 export interface IssueCreateData {
@@ -37,7 +34,7 @@ export interface IssueCreateData {
 
 @Component({
   selector: 'app-issue-create-dialog',
-  imports: [DialogFrame, Icon, TypeIcon, LabelsInput],
+  imports: [DialogFrame, Icon, TypeIcon, LabelsInput, MarkdownEditor, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './issue-create-dialog.html',
 })
@@ -51,8 +48,7 @@ export class IssueCreateDialog {
   protected readonly projects = inject(ProjectService);
   protected readonly people = inject(PeopleService);
 
-  protected readonly typeInfo = ISSUE_TYPES;
-  protected readonly priorityInfo = PRIORITIES;
+  protected readonly i18n = inject(I18n);
   protected readonly priorityOrder = PRIORITY_ORDER;
   protected readonly isSubtask = this.data.type === 'subtask';
   protected readonly types: IssueType[] = this.isSubtask ? ['subtask'] : TOP_LEVEL_TYPES;
@@ -110,9 +106,12 @@ export class IssueCreateDialog {
         statusId: this.data.statusId,
       });
       const key = this.issues.key(issue);
-      this.toasts.show(`Создана задача ${key}`, {
+      this.toasts.show(this.i18n.t('create.created', { key }), {
         kind: 'success',
-        action: { label: 'Открыть', run: () => void this.router.navigate(['/browse', key]) },
+        action: {
+          label: this.i18n.t('common.open'),
+          run: () => void this.router.navigate(['/browse', key]),
+        },
       });
       if (this.createAnother()) {
         this.title.set('');

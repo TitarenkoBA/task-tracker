@@ -13,7 +13,7 @@
 
   <div class="px-3">
     <button type="button" class="btn-primary w-full" (click)="actions.createIssue()">
-      <app-icon name="plus" [size]="18" /> Создать задачу
+      <app-icon name="plus" [size]="18" /> {{ 'common.createIssue' | t }}
       <kbd class="ml-auto rounded-md bg-white/20 px-1.5 text-xs">C</kbd>
     </button>
   </div>
@@ -25,10 +25,10 @@
       [routerLinkActiveOptions]="{ exact: true }"
       class="nav-link"
     >
-      <app-icon name="home" [size]="18" /> Обзор
+      <app-icon name="home" [size]="18" /> {{ 'nav.overview' | t }}
     </a>
     <a routerLink="/issues" routerLinkActive="nav-active" class="nav-link">
-      <app-icon name="list" [size]="18" /> Все задачи
+      <app-icon name="list" [size]="18" /> {{ 'nav.allIssues' | t }}
       <kbd class="ml-auto text-xs text-slate-400">/</kbd>
     </a>
     <a
@@ -37,15 +37,17 @@
       [routerLinkActiveOptions]="{ exact: true }"
       class="nav-link"
     >
-      <app-icon name="folder" [size]="18" /> Проекты
+      <app-icon name="folder" [size]="18" /> {{ 'nav.projects' | t }}
     </a>
 
     <div class="flex items-center justify-between px-3 pt-5 pb-1">
-      <span class="text-xs font-semibold tracking-wide text-slate-400 uppercase">Проекты</span>
+      <span class="text-xs font-semibold tracking-wide text-slate-400 uppercase">{{
+        'nav.projects' | t
+      }}</span>
       <button
         type="button"
         class="btn-icon size-7 rounded-lg"
-        aria-label="Новый проект"
+        [attr.aria-label]="'nav.newProject' | t"
         (click)="actions.createProject()"
       >
         <app-icon name="plus" [size]="16" />
@@ -68,38 +70,38 @@
               routerLinkActive="nav-active"
               class="nav-link h-8"
             >
-              <app-icon name="board" [size]="16" /> Доска
+              <app-icon name="board" [size]="16" /> {{ 'common.board' | t }}
             </a>
             <a
               [routerLink]="['/p', project.key, 'backlog']"
               routerLinkActive="nav-active"
               class="nav-link h-8"
             >
-              <app-icon name="layers" [size]="16" /> Бэклог
+              <app-icon name="layers" [size]="16" /> {{ 'common.backlog' | t }}
             </a>
             <a
               [routerLink]="['/p', project.key, 'settings']"
               routerLinkActive="nav-active"
               class="nav-link h-8"
             >
-              <app-icon name="sliders" [size]="16" /> Настройки проекта
+              <app-icon name="sliders" [size]="16" /> {{ 'nav.projectSettings' | t }}
             </a>
           </div>
         }
       </div>
     } @empty {
-      <p class="px-3 py-2 text-slate-400">Пока нет проектов</p>
+      <p class="px-3 py-2 text-slate-400">{{ 'nav.noProjects' | t }}</p>
     }
   </nav>
 
   <div class="border-t border-slate-200 p-3 dark:border-slate-800">
     @if (pwa.canInstall()) {
       <button type="button" class="nav-link w-full" (click)="pwa.install()">
-        <app-icon name="download" [size]="18" /> Установить приложение
+        <app-icon name="download" [size]="18" /> {{ 'nav.install' | t }}
       </button>
     }
     <a routerLink="/settings" routerLinkActive="nav-active" class="nav-link">
-      <app-icon name="sliders" [size]="18" /> Настройки
+      <app-icon name="sliders" [size]="18" /> {{ 'nav.settings' | t }}
     </a>
   </div>
 </aside>
@@ -113,7 +115,7 @@
 <button
   type="button"
   class="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-30 flex size-14 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-lg shadow-brand-600/30 transition active:scale-95 lg:hidden"
-  aria-label="Создать задачу"
+  [attr.aria-label]="'common.createIssue' | t"
   (click)="actions.createIssue()"
 >
   <app-icon name="plus" [size]="26" />
@@ -132,7 +134,7 @@
         class="flex flex-col items-center justify-center gap-1 text-[11px] font-medium text-slate-500 dark:text-slate-400"
       >
         <app-icon [name]="item.icon" [size]="22" />
-        {{ item.label }}
+        {{ item.label | t }}
       </a>
     }
   </div>
@@ -144,9 +146,9 @@
     class="fixed inset-x-4 top-4 z-50 mx-auto flex max-w-md items-center gap-3 rounded-2xl bg-brand-600 px-4 py-3 text-sm text-white shadow-xl lg:left-72"
   >
     <app-icon name="refresh" />
-    <span class="flex-1">Доступна новая версия</span>
+    <span class="flex-1">{{ 'nav.updateAvailable' | t }}</span>
     <button type="button" class="font-semibold underline" (click)="pwa.applyUpdate()">
-      Обновить
+      {{ 'nav.update' | t }}
     </button>
   </div>
 }

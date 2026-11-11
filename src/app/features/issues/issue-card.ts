@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { TranslatePipe } from '../../core/i18n/i18n.service';
 import { Issue } from '../../core/models/entities';
 import { IssueService } from '../../core/services/issue.service';
 import { PeopleService } from '../../core/services/people.service';
@@ -11,7 +12,7 @@ import { PriorityIcon, TypeIcon } from '../../shared/ui/issue-badges';
 /** Карточка задачи на доске. */
 @Component({
   selector: 'app-issue-card',
-  imports: [RouterLink, Avatar, Icon, PriorityIcon, TypeIcon],
+  imports: [RouterLink, Avatar, Icon, PriorityIcon, TypeIcon, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -48,7 +49,10 @@ import { PriorityIcon, TypeIcon } from '../../shared/ui/issue-badges';
           key()
         }}</span>
         @if (subtasks().total) {
-          <span class="inline-flex items-center gap-0.5 text-xs text-slate-500" title="Подзадачи">
+          <span
+            class="inline-flex items-center gap-0.5 text-xs text-slate-500"
+            [title]="'issue.subtasks' | t"
+          >
             <app-icon name="subtask" [size]="14" /> {{ subtasks().done }}/{{ subtasks().total }}
           </span>
         }
@@ -62,7 +66,7 @@ import { PriorityIcon, TypeIcon } from '../../shared/ui/issue-badges';
                   ? 'text-amber-600'
                   : 'text-slate-500'
             "
-            title="Срок"
+            [title]="'field.dueDate' | t"
           >
             <app-icon name="calendar" [size]="13" /> {{ formatDate(due) }}
           </span>

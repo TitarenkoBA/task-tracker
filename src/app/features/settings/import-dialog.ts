@@ -10,36 +10,31 @@ import {
 import { ToastService } from '../../core/services/toast.service';
 import { formatDateTime } from '../../core/utils/dates';
 import { DialogFrame } from '../../shared/dialog/dialog-frame';
-
-const COLLECTION_LABELS: Record<string, string> = {
-  projects: 'Проекты',
-  issues: 'Задачи',
-  sprints: 'Спринты',
-  people: 'Участники',
-  comments: 'Комментарии',
-  activity: 'События истории',
-};
+import { I18n, TranslatePipe } from '../../core/i18n/i18n.service';
+import { TKey } from '../../core/i18n/ru';
 
 /** Подтверждение импорта: что в файле и как его загрузить. */
 @Component({
   selector: 'app-import-dialog',
-  imports: [DialogFrame],
+  imports: [DialogFrame, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-dialog-frame title="Импорт данных">
+    <app-dialog-frame [title]="'import.title' | t">
       <div class="space-y-4 text-sm">
-        <p class="text-slate-500">Резервная копия от {{ exportedAt }}</p>
+        <p class="text-slate-500">
+          {{ 'import.backupFrom' | t: { date: exportedAt ?? ('import.unknownDate' | t) } }}
+        </p>
         <dl
           class="grid grid-cols-2 gap-x-4 gap-y-1 rounded-xl bg-slate-50 p-3 dark:bg-slate-800/50"
         >
           @for (row of counts; track row.label) {
-            <dt class="text-slate-500">{{ row.label }}</dt>
+            <dt class="text-slate-500">{{ row.label | t }}</dt>
             <dd class="text-right font-medium">{{ row.count }}</dd>
           }
         </dl>
 
         <fieldset class="space-y-2">
-          <legend class="label">Как загрузить</legend>
+          <legend class="label">{{ 'import.how' | t }}</legend>
           <label
             class="flex cursor-pointer gap-3 rounded-xl border p-3 transition"
             [class]="
@@ -56,11 +51,8 @@ const COLLECTION_LABELS: Record<string, string> = {
               (change)="mode.set('merge')"
             />
             <span>
-              <span class="block font-medium">Объединить (рекомендуется)</span>
-              <span class="block text-slate-500"
-                >Новое добавится, а при расхождениях для каждого поля останется более позднее
-                изменение. Ничего не потеряется.</span
-              >
+              <span class="block font-medium">{{ 'import.merge' | t }}</span>
+              <span class="block text-slate-500">{{ 'import.mergeText' | t }}</span>
             </span>
           </label>
           <label
@@ -79,23 +71,23 @@ const COLLECTION_LABELS: Record<string, string> = {
               (change)="mode.set('replace')"
             />
             <span>
-              <span class="block font-medium">Заменить всё</span>
-              <span class="block text-slate-500"
-                >Текущие данные на этом устройстве будут удалены и заменены содержимым файла.</span
-              >
+              <span class="block font-medium">{{ 'import.replace' | t }}</span>
+              <span class="block text-slate-500">{{ 'import.replaceText' | t }}</span>
             </span>
           </label>
         </fieldset>
       </div>
       <ng-container footer>
-        <button type="button" class="btn-secondary" (click)="ref.close()">Отмена</button>
+        <button type="button" class="btn-secondary" (click)="ref.close()">
+          {{ 'common.cancel' | t }}
+        </button>
         <button
           type="button"
           [class]="mode() === 'replace' ? 'btn-danger' : 'btn-primary'"
           [disabled]="busy()"
           (click)="run()"
         >
-          {{ mode() === 'replace' ? 'Заменить данные' : 'Импортировать' }}
+          {{ (mode() === 'replace' ? 'import.replaceButton' : 'import.button') | t }}
         </button>
       </ng-container>
     </app-dialog-frame>
@@ -106,14 +98,15 @@ export class ImportDialog {
   protected readonly ref = inject<DialogRef<ImportSummary>>(DialogRef);
   private readonly service = inject(ExportImportService);
   private readonly toasts = inject(ToastService);
+  private readonly i18n = inject(I18n);
 
   protected readonly mode = signal<ImportMode>('merge');
   protected readonly busy = signal(false);
   protected readonly exportedAt = this.file.exportedAt
     ? formatDateTime(Date.parse(this.file.exportedAt))
-    : 'неизвестной даты';
+    : null;
   protected readonly counts = COLLECTIONS.map((c) => ({
-    label: COLLECTION_LABELS[c],
+    label: `import.collection.${c}` as TKey,
     count: this.file.data[c].filter((e) => !e.deleted).length,
   }));
 
@@ -123,14 +116,14 @@ export class ImportDialog {
       const summary = await this.service.import(this.file, this.mode());
       this.toasts.success(
         summary.mode === 'replace'
-          ? 'Данные заменены'
+          ? this.i18n.t('import.replaced')
           : summary.changed
-            ? `Импорт завершён: обновлено записей — ${summary.changed}`
-            : 'Импорт завершён: всё уже было актуально',
+            ? this.i18n.t('import.merged', { count: summary.changed })
+            : this.i18n.t('import.upToDate'),
       );
       this.ref.close(summary);
     } catch (error) {
-      this.toasts.error(`Ошибка импорта: ${(error as Error).message}`);
+      this.toasts.error(this.i18n.t('import.failed', { message: (error as Error).message }));
       this.busy.set(false);
     }
   }

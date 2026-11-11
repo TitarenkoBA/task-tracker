@@ -2,10 +2,12 @@
   <div class="mx-auto max-w-7xl px-4 py-5 lg:px-8 lg:py-8">
     <header class="mb-6 flex items-start gap-3">
       <div class="flex-1">
-        <p class="text-sm text-slate-500 first-letter:uppercase dark:text-slate-400">{{ today }}</p>
+        <p class="text-sm text-slate-500 first-letter:uppercase dark:text-slate-400">
+          {{ today() }}
+        </p>
         <h1 class="text-2xl font-bold tracking-tight lg:text-3xl">{{ greeting() }}</h1>
       </div>
-      <a routerLink="/settings" class="lg:hidden" aria-label="Профиль и настройки">
+      <a routerLink="/settings" class="lg:hidden" [attr.aria-label]="'dash.profile' | t">
         <app-avatar [person]="people.me()" size="md" />
       </a>
     </header>
@@ -14,10 +16,9 @@
       <!-- Первый запуск -->
       <section class="card overflow-hidden">
         <div class="bg-gradient-to-br from-brand-600 to-violet-600 px-6 py-8 text-white">
-          <h2 class="text-xl font-bold">Добро пожаловать в Task Tracker</h2>
+          <h2 class="text-xl font-bold">{{ 'dash.welcome' | t }}</h2>
           <p class="mt-2 max-w-lg text-sm text-white/80">
-            Задачи, доска, спринты и бэклог — прямо в браузере. Данные хранятся только на этом
-            устройстве и работают без интернета. Перенести их можно через экспорт в настройках.
+            {{ 'dash.welcomeText' | t }}
           </p>
         </div>
         <div class="grid gap-3 p-4 sm:grid-cols-2">
@@ -31,8 +32,8 @@
               ><app-icon name="plus"
             /></span>
             <span>
-              <span class="block font-semibold">Создать проект</span>
-              <span class="block text-sm text-slate-500">Начать с чистого листа</span>
+              <span class="block font-semibold">{{ 'dash.createProject' | t }}</span>
+              <span class="block text-sm text-slate-500">{{ 'dash.createProjectText' | t }}</span>
             </span>
           </button>
           <button
@@ -45,10 +46,8 @@
               ><app-icon name="sparkles"
             /></span>
             <span>
-              <span class="block font-semibold">Открыть демо-проект</span>
-              <span class="block text-sm text-slate-500"
-                >Посмотреть, как всё устроено, на примере</span
-              >
+              <span class="block font-semibold">{{ 'dash.demo' | t }}</span>
+              <span class="block text-sm text-slate-500">{{ 'dash.demoText' | t }}</span>
             </span>
           </button>
         </div>
@@ -63,24 +62,24 @@
         >
           <app-icon name="user" class="text-brand-500" />
           <p class="mt-3 text-3xl font-bold">{{ stats().mine }}</p>
-          <p class="text-sm text-slate-500">мои открытые</p>
+          <p class="text-sm text-slate-500">{{ 'dash.myOpen' | t }}</p>
         </button>
         <div class="card p-4">
           <app-icon name="alert" [class]="stats().overdue ? 'text-rose-500' : 'text-slate-400'" />
           <p class="mt-3 text-3xl font-bold" [class.text-rose-600]="stats().overdue">
             {{ stats().overdue }}
           </p>
-          <p class="text-sm text-slate-500">просрочено</p>
+          <p class="text-sm text-slate-500">{{ 'dash.overdue' | t }}</p>
         </div>
         <div class="card p-4">
           <app-icon name="refresh" class="text-sky-500" />
           <p class="mt-3 text-3xl font-bold">{{ stats().inProgress }}</p>
-          <p class="text-sm text-slate-500">в работе</p>
+          <p class="text-sm text-slate-500">{{ 'dash.inProgress' | t }}</p>
         </div>
         <div class="card p-4">
           <app-icon name="check-circle" class="text-emerald-500" />
           <p class="mt-3 text-3xl font-bold">{{ stats().doneThisWeek }}</p>
-          <p class="text-sm text-slate-500">готово за неделю</p>
+          <p class="text-sm text-slate-500">{{ 'dash.doneWeek' | t }}</p>
         </div>
       </section>
 
@@ -89,14 +88,14 @@
           <!-- Мои задачи -->
           <section>
             <div class="mb-2 flex items-center justify-between px-1">
-              <h2 class="font-semibold">Назначены мне</h2>
+              <h2 class="font-semibold">{{ 'dash.assigned' | t }}</h2>
               @if (mine().length > 8) {
                 <button
                   type="button"
                   class="text-sm text-brand-600 hover:underline dark:text-brand-400"
                   (click)="showMine()"
                 >
-                  Все {{ mine().length }}
+                  {{ 'dash.all' | t: { count: mine().length } }}
                 </button>
               }
             </div>
@@ -110,8 +109,8 @@
               <div class="card">
                 <app-empty-state
                   icon="check-circle"
-                  title="Всё сделано!"
-                  text="На вас нет открытых задач."
+                  [title]="'dash.allDone' | t"
+                  [text]="'dash.allDoneText' | t"
                 />
               </div>
             }
@@ -120,7 +119,7 @@
           <!-- Сроки -->
           @if (upcoming().length) {
             <section>
-              <h2 class="mb-2 px-1 font-semibold">Ближайшие сроки</h2>
+              <h2 class="mb-2 px-1 font-semibold">{{ 'dash.upcoming' | t }}</h2>
               <div class="card divide-y divide-slate-100 overflow-hidden dark:divide-slate-800">
                 @for (issue of upcoming(); track issue.id) {
                   <app-issue-row [issue]="issue" />
@@ -132,14 +131,14 @@
 
         <!-- Лента событий -->
         <section>
-          <h2 class="mb-2 px-1 font-semibold">Последние события</h2>
+          <h2 class="mb-2 px-1 font-semibold">{{ 'dash.feed' | t }}</h2>
           <ol class="card space-y-4 p-4">
             @for (item of feed(); track item.entry.id) {
               <li class="flex gap-3 text-sm">
                 <app-avatar size="sm" [person]="people.get(item.entry.actorId)" class="mt-0.5" />
                 <p class="min-w-0 flex-1 leading-snug">
                   <span class="font-medium">{{
-                    people.get(item.entry.actorId)?.name ?? 'Кто-то'
+                    people.get(item.entry.actorId)?.name ?? ('common.someone' | t)
                   }}</span>
                   {{ describe(item.entry) }}
                   <a
@@ -155,7 +154,7 @@
                 </p>
               </li>
             } @empty {
-              <li class="text-sm text-slate-500">Пока ничего не происходило</li>
+              <li class="text-sm text-slate-500">{{ 'dash.feedEmpty' | t }}</li>
             }
           </ol>
         </section>

@@ -5,12 +5,13 @@ import { COLOR_CLASSES } from '../../core/models/catalog';
 import { Project } from '../../core/models/entities';
 import { ProjectService } from '../../core/services/project.service';
 import { Icon } from '../../shared/ui/icon';
+import { TranslatePipe } from '../../core/i18n/i18n.service';
 import { ActionsService } from '../actions.service';
 
 /** Кнопка с названием проекта и выпадающим списком для быстрого переключения. */
 @Component({
   selector: 'app-project-switcher',
-  imports: [CdkMenuTrigger, CdkMenu, CdkMenuItem, Icon],
+  imports: [CdkMenuTrigger, CdkMenu, CdkMenuItem, Icon, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button
@@ -36,7 +37,7 @@ import { ActionsService } from '../actions.service';
         }
         <div class="my-1 border-t border-slate-100 dark:border-slate-800"></div>
         <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="actions.createProject()">
-          <app-icon name="plus" [size]="16" /> Новый проект
+          <app-icon name="plus" [size]="16" /> {{ 'nav.newProject' | t }}
         </button>
       </div>
     </ng-template>

@@ -10,6 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { I18n, TranslatePipe } from '../../core/i18n/i18n.service';
 import { EntityId, Issue, Sprint } from '../../core/models/entities';
 import { IssueService } from '../../core/services/issue.service';
 import { ProjectService } from '../../core/services/project.service';
@@ -56,6 +57,7 @@ interface Section {
     IssueRow,
     Icon,
     EmptyState,
+    TranslatePipe,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './backlog-page.html',
@@ -69,6 +71,7 @@ export class BacklogPage {
   private readonly dialogs = inject(DialogService);
   private readonly toasts = inject(ToastService);
   protected readonly actions = inject(ActionsService);
+  private readonly i18n = inject(I18n);
 
   protected readonly project = computed(() => this.projects.byKey(this.projectKey()));
   protected readonly query = signal('');
@@ -162,7 +165,7 @@ export class BacklogPage {
 
   protected startSprint(sprint: Sprint): void {
     if (this.hasActiveSprint()) {
-      this.toasts.error('Сначала завершите активный спринт');
+      this.toasts.error(this.i18n.t('backlog.finishActiveFirst'));
       return;
     }
     this.dialogs.open(SprintFormDialog, { sprint, mode: 'start' });
@@ -178,9 +181,9 @@ export class BacklogPage {
 
   protected async removeSprint(sprint: Sprint): Promise<void> {
     const ok = await this.dialogs.confirm({
-      title: `Удалить ${sprint.name}?`,
-      message: 'Задачи спринта вернутся в бэклог. Сами задачи не удалятся.',
-      confirmLabel: 'Удалить спринт',
+      title: this.i18n.t('backlog.removeSprintTitle', { name: sprint.name }),
+      message: this.i18n.t('backlog.removeSprintText'),
+      confirmLabel: this.i18n.t('backlog.removeSprintConfirm'),
       danger: true,
     });
     if (ok) this.sprints.remove(sprint.id);

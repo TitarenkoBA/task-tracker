@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { STATUS_CATEGORIES } from '../../core/models/catalog';
+import { TranslatePipe } from '../../core/i18n/i18n.service';
 import { EntityId, Issue, WorkflowStatus } from '../../core/models/entities';
 import { IssueService } from '../../core/services/issue.service';
 import { PeopleService } from '../../core/services/people.service';
@@ -51,6 +52,7 @@ interface Column {
     Avatar,
     Icon,
     EmptyState,
+    TranslatePipe,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './board-page.html',

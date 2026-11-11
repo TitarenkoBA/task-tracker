@@ -4,12 +4,12 @@
     class="pt-safe sticky top-0 z-20 border-b border-slate-200/70 bg-slate-50/85 backdrop-blur-lg lg:static lg:border-0 lg:bg-transparent dark:border-slate-800/70 dark:bg-slate-950/85 lg:dark:bg-transparent"
   >
     <div class="mx-auto flex max-w-6xl items-center gap-1 px-2 py-2 lg:px-8 lg:pt-6">
-      <button type="button" class="btn-icon" aria-label="Назад" (click)="back()">
+      <button type="button" class="btn-icon" [attr.aria-label]="'issue.back' | t" (click)="back()">
         <app-icon name="arrow-left" />
       </button>
       <nav
         class="flex min-w-0 flex-1 items-center gap-1.5 text-sm text-slate-500"
-        aria-label="Путь"
+        [attr.aria-label]="'issue.breadcrumbs' | t"
       >
         @if (project(); as p) {
           <a
@@ -36,16 +36,26 @@
           {{ key() }}
         </span>
       </nav>
-      <button type="button" class="btn-icon" aria-label="Скопировать ссылку" (click)="copyLink()">
+      <button
+        type="button"
+        class="btn-icon"
+        [attr.aria-label]="'issue.copyLink' | t"
+        (click)="copyLink()"
+      >
         <app-icon name="link" [size]="18" />
       </button>
-      <button type="button" class="btn-icon" aria-label="Ещё действия" [cdkMenuTriggerFor]="more">
+      <button
+        type="button"
+        class="btn-icon"
+        [attr.aria-label]="'issue.moreActions' | t"
+        [cdkMenuTriggerFor]="more"
+      >
         <app-icon name="more" [strokeWidth]="3" />
       </button>
       <ng-template #more>
         <div cdkMenu class="menu">
           <button cdkMenuItem class="menu-item text-rose-600!" (cdkMenuItemTriggered)="remove()">
-            <app-icon name="trash" [size]="16" /> Удалить задачу
+            <app-icon name="trash" [size]="16" /> {{ 'issue.delete' | t }}
           </button>
         </div>
       </ng-template>
@@ -57,7 +67,7 @@
       #titleField
       class="autosize -mx-2 block w-[calc(100%+1rem)] resize-none rounded-xl border border-transparent bg-transparent px-2 py-1 text-xl leading-snug font-bold tracking-tight outline-none hover:border-slate-200 focus:border-brand-500 focus:bg-white sm:text-2xl dark:hover:border-slate-700 dark:focus:bg-slate-900"
       rows="1"
-      aria-label="Название задачи"
+      [attr.aria-label]="'issue.titleLabel' | t"
       [value]="issue.title"
       (blur)="saveTitle(titleField)"
       (keydown.enter)="$event.preventDefault(); titleField.blur()"
@@ -67,40 +77,52 @@
   <div class="mx-auto grid max-w-6xl gap-6 px-4 py-4 lg:grid-cols-[minmax(0,1fr)_20rem] lg:px-8">
     <!-- Основная колонка -->
     <div class="min-w-0 space-y-6">
-      <!-- Описание -->
+      <!-- Описание (Markdown) -->
       <section>
-        <h2 class="label">Описание</h2>
-        @if (editingDescription()) {
-          <textarea
-            #descField
-            class="input autosize min-h-32"
-            placeholder="Подробности, ссылки, критерии готовности…"
-            [value]="issue.description"
-            (keydown.escape)="editingDescription.set(false)"
-          ></textarea>
-          <div class="mt-2 flex gap-2">
+        <div class="mb-1.5 flex items-center justify-between">
+          <h2 class="label mb-0">{{ 'field.description' | t }}</h2>
+          @if (descriptionDraft() === null && issue.description) {
             <button
               type="button"
-              class="btn-primary h-9"
-              (click)="saveDescription(descField.value)"
+              class="btn-ghost -mr-2 h-7 px-2 text-xs"
+              (click)="editDescription()"
             >
-              Сохранить
+              <app-icon name="pencil" [size]="14" /> {{ 'common.edit' | t }}
             </button>
-            <button type="button" class="btn-ghost h-9" (click)="editingDescription.set(false)">
-              Отмена
+          }
+        </div>
+        @if (descriptionDraft() !== null) {
+          <app-markdown-editor
+            [value]="descriptionDraft()!"
+            (valueChange)="descriptionDraft.set($event)"
+            [placeholder]="'create.descPlaceholder' | t"
+            [minRows]="6"
+            [autofocus]="true"
+            (submitted)="saveDescription()"
+            (cancelled)="descriptionDraft.set(null)"
+          />
+          <div class="mt-2 flex gap-2">
+            <button type="button" class="btn-primary h-9" (click)="saveDescription()">
+              {{ 'common.save' | t }}
             </button>
+            <button type="button" class="btn-ghost h-9" (click)="descriptionDraft.set(null)">
+              {{ 'common.cancel' | t }}
+            </button>
+          </div>
+        } @else if (issue.description) {
+          <div
+            class="-mx-2 cursor-text rounded-xl px-2 py-1 transition hover:bg-slate-100/70 dark:hover:bg-slate-900"
+            (click)="onDescriptionClick($event)"
+          >
+            <app-markdown [text]="issue.description" />
           </div>
         } @else {
           <button
             type="button"
-            class="-mx-2 block w-[calc(100%+1rem)] rounded-xl px-2 py-1.5 text-left text-sm leading-relaxed whitespace-pre-wrap hover:bg-slate-100 dark:hover:bg-slate-900"
-            (click)="editingDescription.set(true)"
+            class="-mx-2 block w-[calc(100%+1rem)] rounded-xl px-2 py-1.5 text-left text-sm text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900"
+            (click)="editDescription()"
           >
-            @if (issue.description) {
-              {{ issue.description }}
-            } @else {
-              <span class="text-slate-400">Добавить описание…</span>
-            }
+            {{ 'issue.addDescription' | t }}
           </button>
         }
       </section>
@@ -109,7 +131,9 @@
       @if (issue.type !== 'subtask') {
         <section>
           <div class="mb-2 flex items-center gap-2">
-            <h2 class="label mb-0">{{ issue.type === 'epic' ? 'Задачи эпика' : 'Подзадачи' }}</h2>
+            <h2 class="label mb-0">
+              {{ (issue.type === 'epic' ? 'issue.epicChildren' : 'issue.subtasks') | t }}
+            </h2>
             @if (childProgress().total) {
               <span class="text-xs text-slate-500"
                 >{{ childProgress().done }}/{{ childProgress().total }}</span
@@ -131,7 +155,7 @@
                   <button
                     type="button"
                     class="btn-icon size-9 shrink-0"
-                    [attr.aria-label]="isDone(child) ? 'Вернуть в работу' : 'Отметить выполненной'"
+                    [attr.aria-label]="(isDone(child) ? 'issue.reopen' : 'issue.markDone') | t"
                     (click)="toggleChildDone(child)"
                   >
                     <app-icon
@@ -156,7 +180,7 @@
                   })
                 "
               >
-                <app-icon name="plus" [size]="16" /> Добавить задачу в эпик
+                <app-icon name="plus" [size]="16" /> {{ 'issue.addToEpic' | t }}
               </button>
             } @else {
               <div class="flex items-center gap-2 px-4">
@@ -164,7 +188,7 @@
                 <input
                   #subtaskField
                   class="h-11 flex-1 bg-transparent text-base outline-none placeholder:text-slate-400 sm:text-sm"
-                  placeholder="Добавить подзадачу и нажать Enter"
+                  [placeholder]="'issue.addSubtask' | t"
                   enterkeyhint="done"
                   (keydown.enter)="addSubtask(subtaskField)"
                 />
@@ -190,7 +214,7 @@
             [attr.aria-selected]="tab() === 'comments'"
             (click)="tab.set('comments')"
           >
-            Комментарии ({{ comments().length }})
+            {{ 'issue.comments' | t: { count: comments().length } }}
           </button>
           <button
             type="button"
@@ -202,22 +226,22 @@
             [attr.aria-selected]="tab() === 'history'"
             (click)="tab.set('history')"
           >
-            История
+            {{ 'issue.history' | t }}
           </button>
         </div>
 
         @if (tab() === 'comments') {
           <div class="flex gap-3">
             <app-avatar [person]="people.me()" />
-            <div class="flex-1">
-              <textarea
-                #commentField
-                class="input min-h-20"
-                placeholder="Написать комментарий… (Ctrl+Enter — отправить)"
-                (keydown)="onCommentKeydown($event, commentField)"
-              ></textarea>
-              <button type="button" class="btn-primary mt-2 h-9" (click)="addComment(commentField)">
-                Отправить
+            <div class="min-w-0 flex-1">
+              <app-markdown-editor
+                [(value)]="commentDraft"
+                [placeholder]="'issue.commentPlaceholder' | t"
+                [minRows]="2"
+                (submitted)="addComment()"
+              />
+              <button type="button" class="btn-primary mt-2 h-9" (click)="addComment()">
+                {{ 'issue.send' | t }}
               </button>
             </div>
           </div>
@@ -234,49 +258,50 @@
                       >{{ formatRelative(comment.createdAt) }}</span
                     >
                     @if (comment.updatedAt - comment.createdAt > 1000) {
-                      <span class="text-xs text-slate-400"> · изменён</span>
+                      <span class="text-xs text-slate-400"> {{ 'issue.edited' | t }}</span>
                     }
                   </p>
                   @if (editingCommentId() === comment.id) {
-                    <textarea
-                      #editField
-                      class="input mt-1 min-h-20"
-                      [value]="comment.body"
-                    ></textarea>
+                    <app-markdown-editor
+                      class="mt-1"
+                      [(value)]="commentEditDraft"
+                      [minRows]="2"
+                      [autofocus]="true"
+                      (submitted)="saveComment(comment)"
+                      (cancelled)="editingCommentId.set(null)"
+                    />
                     <div class="mt-2 flex gap-2">
                       <button
                         type="button"
                         class="btn-primary h-8 px-3"
-                        (click)="saveComment(comment, editField.value)"
+                        (click)="saveComment(comment)"
                       >
-                        Сохранить
+                        {{ 'common.save' | t }}
                       </button>
                       <button
                         type="button"
                         class="btn-ghost h-8 px-3"
                         (click)="editingCommentId.set(null)"
                       >
-                        Отмена
+                        {{ 'common.cancel' | t }}
                       </button>
                     </div>
                   } @else {
-                    <p class="mt-1 text-sm leading-relaxed break-words whitespace-pre-wrap">
-                      {{ comment.body }}
-                    </p>
+                    <app-markdown class="mt-1" [text]="comment.body" />
                     <div class="mt-1 flex gap-3 text-xs text-slate-500">
                       <button
                         type="button"
                         class="hover:text-slate-900 dark:hover:text-white"
-                        (click)="editingCommentId.set(comment.id)"
+                        (click)="editComment(comment)"
                       >
-                        Изменить
+                        {{ 'common.edit' | t }}
                       </button>
                       <button
                         type="button"
                         class="hover:text-rose-600"
                         (click)="removeComment(comment)"
                       >
-                        Удалить
+                        {{ 'common.delete' | t }}
                       </button>
                     </div>
                   }
@@ -301,11 +326,11 @@
                     <p class="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
                       <span
                         class="rounded bg-slate-100 px-1.5 py-0.5 text-slate-500 line-through dark:bg-slate-800"
-                        >{{ entry.from ?? '—' }}</span
+                        >{{ i18n.historyValue(entry.field, entry.from) }}</span
                       >
                       <app-icon name="chevron-right" [size]="12" class="text-slate-400" />
                       <span class="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800">{{
-                        entry.to ?? '—'
+                        i18n.historyValue(entry.field, entry.to)
                       }}</span>
                     </p>
                   }
@@ -323,7 +348,7 @@
         <select
           class="h-11 w-full rounded-xl px-4 text-base font-semibold outline-none focus:ring-4 focus:ring-brand-500/20 sm:text-sm"
           [class]="categories[status()?.category ?? 'todo'].classes"
-          aria-label="Статус"
+          [attr.aria-label]="'field.statusId' | t"
           (change)="save({ statusId: $any($event.target).value })"
         >
           @for (s of project()?.statuses ?? []; track s.id) {
@@ -333,16 +358,16 @@
 
         <dl class="card mt-4 divide-y divide-slate-100 text-sm lg:mt-0 dark:divide-slate-800">
           <div class="field-row">
-            <dt>Исполнитель</dt>
+            <dt>{{ 'field.assigneeId' | t }}</dt>
             <dd>
               <div class="flex items-center gap-2">
                 <app-avatar size="sm" [person]="people.get(issue.assigneeId)" />
                 <select
                   class="field-select"
-                  aria-label="Исполнитель"
+                  [attr.aria-label]="'field.assigneeId' | t"
                   (change)="save({ assigneeId: $any($event.target).value || null })"
                 >
-                  <option value="">Не назначен</option>
+                  <option value="">{{ 'common.unassigned' | t }}</option>
                   @for (p of people.people(); track p.id) {
                     <option [value]="p.id" [selected]="p.id === issue.assigneeId">
                       {{ p.name }}
@@ -356,23 +381,23 @@
                   class="mt-1 text-xs text-brand-600 hover:underline dark:text-brand-400"
                   (click)="assignToMe()"
                 >
-                  Назначить меня
+                  {{ 'issue.assignMe' | t }}
                 </button>
               }
             </dd>
           </div>
 
           <div class="field-row">
-            <dt>Приоритет</dt>
+            <dt>{{ 'field.priority' | t }}</dt>
             <dd>
               <select
                 class="field-select"
-                aria-label="Приоритет"
+                [attr.aria-label]="'field.priority' | t"
                 (change)="save({ priority: $any($event.target).value })"
               >
                 @for (p of priorityOrder; track p) {
                   <option [value]="p" [selected]="p === issue.priority">
-                    {{ priorityInfo[p].label }}
+                    {{ i18n.priority(p) }}
                   </option>
                 }
               </select>
@@ -381,16 +406,16 @@
 
           @if (issue.type !== 'subtask') {
             <div class="field-row">
-              <dt>Тип</dt>
+              <dt>{{ 'field.type' | t }}</dt>
               <dd>
                 <select
                   class="field-select"
-                  aria-label="Тип"
+                  [attr.aria-label]="'field.type' | t"
                   (change)="save({ type: $any($event.target).value })"
                 >
                   @for (t of topLevelTypes; track t) {
                     <option [value]="t" [selected]="t === issue.type">
-                      {{ typeInfo[t].label }}
+                      {{ i18n.issueType(t) }}
                     </option>
                   }
                 </select>
@@ -400,14 +425,14 @@
 
           @if (issue.type !== 'epic' && issue.type !== 'subtask') {
             <div class="field-row">
-              <dt>Спринт</dt>
+              <dt>{{ 'field.sprintId' | t }}</dt>
               <dd>
                 <select
                   class="field-select"
-                  aria-label="Спринт"
+                  [attr.aria-label]="'field.sprintId' | t"
                   (change)="save({ sprintId: $any($event.target).value || null })"
                 >
-                  <option value="">Бэклог</option>
+                  <option value="">{{ 'common.backlog' | t }}</option>
                   @for (s of projectSprints(); track s.id) {
                     <option [value]="s.id" [selected]="s.id === issue.sprintId">
                       {{ s.name }}
@@ -417,14 +442,14 @@
               </dd>
             </div>
             <div class="field-row">
-              <dt>Эпик</dt>
+              <dt>{{ 'field.epic' | t }}</dt>
               <dd>
                 <select
                   class="field-select"
-                  aria-label="Эпик"
+                  [attr.aria-label]="'field.epic' | t"
                   (change)="save({ parentId: $any($event.target).value || null })"
                 >
-                  <option value="">Без эпика</option>
+                  <option value="">{{ 'common.noEpic' | t }}</option>
                   @for (e of epics(); track e.id) {
                     <option [value]="e.id" [selected]="e.id === issue.parentId">
                       {{ e.title }}
@@ -436,7 +461,7 @@
           }
 
           <div class="field-row">
-            <dt>Метки</dt>
+            <dt>{{ 'field.labels' | t }}</dt>
             <dd>
               <app-labels-input
                 inputId="detail-labels"
@@ -447,14 +472,14 @@
           </div>
 
           <div class="field-row">
-            <dt>Story points</dt>
+            <dt>{{ 'field.storyPoints' | t }}</dt>
             <dd>
               <input
                 class="field-select"
                 type="number"
                 min="0"
                 inputmode="numeric"
-                aria-label="Story points"
+                [attr.aria-label]="'field.storyPoints' | t"
                 placeholder="—"
                 [value]="issue.storyPoints ?? ''"
                 (change)="setPoints($any($event.target).value)"
@@ -463,12 +488,12 @@
           </div>
 
           <div class="field-row">
-            <dt>Срок</dt>
+            <dt>{{ 'field.dueDate' | t }}</dt>
             <dd>
               <input
                 class="field-select"
                 type="date"
-                aria-label="Срок"
+                [attr.aria-label]="'field.dueDate' | t"
                 [value]="issue.dueDate ?? ''"
                 (change)="save({ dueDate: $any($event.target).value || null })"
               />
@@ -476,7 +501,7 @@
           </div>
 
           <div class="field-row">
-            <dt>Автор</dt>
+            <dt>{{ 'field.reporterId' | t }}</dt>
             <dd class="flex items-center gap-2 py-1.5">
               <app-avatar size="sm" [person]="people.get(issue.reporterId)" />
               {{ personName(issue.reporterId) }}
@@ -485,8 +510,8 @@
         </dl>
 
         <p class="mt-3 px-1 text-xs leading-relaxed text-slate-500">
-          Создана {{ formatDateTime(issue.createdAt) }}<br />
-          Обновлена {{ formatRelative(issue.updatedAt) }}
+          {{ 'issue.createdAt' | t: { date: formatDateTime(issue.createdAt) } }}<br />
+          {{ 'issue.updatedAt' | t: { date: formatRelative(issue.updatedAt) } }}
         </p>
       </div>
     </aside>
@@ -494,9 +519,9 @@
 } @else {
   <app-empty-state
     icon="search"
-    title="Задача не найдена"
-    [text]="'Задачи ' + issueKey() + ' нет или она была удалена.'"
+    [title]="'issue.notFound' | t"
+    [text]="'issue.notFoundText' | t: { key: issueKey() }"
   >
-    <a routerLink="/issues" class="btn-primary">Все задачи</a>
+    <a routerLink="/issues" class="btn-primary">{{ 'nav.allIssues' | t }}</a>
   </app-empty-state>
 }

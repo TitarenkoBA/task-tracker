@@ -1,12 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { FIELD_LABELS, PRIORITIES } from '../../core/models/catalog';
+import { I18n, TranslatePipe } from '../../core/i18n/i18n.service';
+import { PRIORITIES } from '../../core/models/catalog';
 import { Activity } from '../../core/models/entities';
 import { DemoDataService } from '../../core/services/demo-data.service';
 import { IssueService } from '../../core/services/issue.service';
 import { PeopleService } from '../../core/services/people.service';
 import { ProjectService } from '../../core/services/project.service';
-import { formatRelative, todayIso } from '../../core/utils/dates';
+import { formatRelative, formatWeekday, todayIso } from '../../core/utils/dates';
 import { Avatar } from '../../shared/ui/avatar';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { Icon } from '../../shared/ui/icon';
@@ -20,7 +21,7 @@ const WEEK = 7 * 86_400_000;
 /** Главная страница: сводка по моим задачам и последние события. */
 @Component({
   selector: 'app-dashboard-page',
-  imports: [RouterLink, Avatar, EmptyState, Icon, IssueRow],
+  imports: [RouterLink, Avatar, EmptyState, Icon, IssueRow, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dashboard-page.html',
 })
@@ -32,25 +33,25 @@ export class DashboardPage {
   protected readonly projects = inject(ProjectService);
   protected readonly people = inject(PeopleService);
   protected readonly actions = inject(ActionsService);
+  private readonly i18n = inject(I18n);
 
   protected readonly greeting = computed(() => {
     const hour = new Date().getHours();
-    const part =
+    const greeting = this.i18n.t(
       hour < 6
-        ? 'Доброй ночи'
+        ? 'dash.night'
         : hour < 12
-          ? 'Доброе утро'
+          ? 'dash.morning'
           : hour < 18
-            ? 'Добрый день'
-            : 'Добрый вечер';
-    const name = this.people.me()?.name;
-    return name && name !== 'Я' ? `${part}, ${name.split(' ')[0]}` : part;
+            ? 'dash.day'
+            : 'dash.evening',
+    );
+    const me = this.people.me();
+    return me && !this.people.hasDefaultName(me)
+      ? this.i18n.t('dash.greetingName', { greeting, name: me.name.split(' ')[0] })
+      : greeting;
   });
-  protected readonly today = new Intl.DateTimeFormat('ru', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  }).format(new Date());
+  protected readonly today = computed(() => formatWeekday());
 
   private readonly openIssues = computed(() =>
     this.issues.issues().filter((i) => i.type !== 'epic' && !this.issues.isDone(i)),
@@ -104,10 +105,15 @@ export class DashboardPage {
   }
 
   protected describe(entry: Activity): string {
-    if (entry.kind === 'created') return 'создал(а)';
-    if (entry.kind === 'commented') return 'прокомментировал(а)';
-    const field = FIELD_LABELS[entry.field ?? ''] ?? entry.field;
-    return entry.to ? `${field} → «${entry.to}» в` : `изменил(а) ${field?.toLowerCase()} в`;
+    if (entry.kind === 'created') return this.i18n.t('dash.feedCreated');
+    if (entry.kind === 'commented') return this.i18n.t('dash.feedCommented');
+    const field = this.i18n.field(entry.field ?? '');
+    return entry.to
+      ? this.i18n.t('dash.feedChangedTo', {
+          field,
+          value: this.i18n.historyValue(entry.field, entry.to),
+        })
+      : this.i18n.t('dash.feedChanged', { field });
   }
 
   /** Перейти к списку задач с готовым фильтром. */

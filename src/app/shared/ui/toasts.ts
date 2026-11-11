@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Toast, ToastService } from '../../core/services/toast.service';
 import { Icon } from './icon';
+import { TranslatePipe } from '../../core/i18n/i18n.service';
 
 /** Область, где показываются уведомления из {@link ToastService}. */
 @Component({
   selector: 'app-toasts',
-  imports: [Icon],
+  imports: [Icon, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class:
@@ -32,7 +33,7 @@ import { Icon } from './icon';
         <button
           type="button"
           class="opacity-60 hover:opacity-100"
-          aria-label="Закрыть"
+          [attr.aria-label]="'common.close' | t"
           (click)="toasts.dismiss(toast.id)"
         >
           <app-icon name="x" [size]="16" />

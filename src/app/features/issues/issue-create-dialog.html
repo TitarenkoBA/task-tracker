@@ -1,15 +1,15 @@
-<app-dialog-frame [title]="isSubtask ? 'Новая подзадача' : 'Новая задача'">
+<app-dialog-frame [title]="(isSubtask ? 'create.titleSubtask' : 'create.titleIssue') | t">
   <form id="issue-create" class="space-y-4" (submit)="$event.preventDefault(); submit()">
     @if (parent(); as p) {
       <p class="text-sm text-slate-500">
-        Родитель:
+        {{ 'create.parent' | t }}
         <span class="font-medium text-slate-700 dark:text-slate-200"
           >{{ issueKey(p) }} {{ p.title }}</span
         >
       </p>
     } @else {
       <div>
-        <label class="label" for="ic-project">Проект</label>
+        <label class="label" for="ic-project">{{ 'field.project' | t }}</label>
         <select
           id="ic-project"
           class="input"
@@ -27,7 +27,7 @@
 
     @if (!isSubtask) {
       <fieldset>
-        <legend class="label">Тип</legend>
+        <legend class="label">{{ 'field.type' | t }}</legend>
         <div class="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1">
           @for (t of types; track t) {
             <button
@@ -42,7 +42,7 @@
               (click)="type.set(t)"
             >
               <app-type-icon [type]="t" />
-              {{ typeInfo[t].label }}
+              {{ i18n.issueType(t) }}
             </button>
           }
         </div>
@@ -50,54 +50,53 @@
     }
 
     <div>
-      <label class="label" for="ic-title">Название</label>
+      <label class="label" for="ic-title">{{ 'field.title' | t }}</label>
       <input
         #titleInput
         id="ic-title"
         class="input"
         [class.border-rose-500]="titleError()"
-        placeholder="Что нужно сделать?"
+        [placeholder]="'create.titlePlaceholder' | t"
         autocomplete="off"
         cdkFocusInitial
         [value]="title()"
         (input)="title.set($any($event.target).value)"
       />
       @if (titleError()) {
-        <p class="mt-1 text-xs text-rose-600">Введите название</p>
+        <p class="mt-1 text-xs text-rose-600">{{ 'create.titleError' | t }}</p>
       }
     </div>
 
     <div>
-      <label class="label" for="ic-desc">Описание</label>
-      <textarea
-        id="ic-desc"
-        class="input"
-        rows="3"
-        placeholder="Подробности, ссылки, критерии готовности…"
-        [value]="description()"
-        (input)="description.set($any($event.target).value)"
-      ></textarea>
+      <label class="label" for="ic-desc">{{ 'field.description' | t }}</label>
+      <app-markdown-editor
+        inputId="ic-desc"
+        [(value)]="description"
+        [placeholder]="'create.descPlaceholder' | t"
+        [minRows]="3"
+        (submitted)="submit()"
+      />
     </div>
 
     <div class="grid grid-cols-2 gap-3">
       <div>
-        <label class="label" for="ic-assignee">Исполнитель</label>
+        <label class="label" for="ic-assignee">{{ 'field.assigneeId' | t }}</label>
         <select
           id="ic-assignee"
           class="input"
           (change)="assigneeId.set($any($event.target).value || null)"
         >
-          <option value="">Не назначен</option>
+          <option value="">{{ 'common.unassigned' | t }}</option>
           @for (p of people.people(); track p.id) {
             <option [value]="p.id" [selected]="assigneeId() === p.id">{{ p.name }}</option>
           }
         </select>
       </div>
       <div>
-        <label class="label" for="ic-priority">Приоритет</label>
+        <label class="label" for="ic-priority">{{ 'field.priority' | t }}</label>
         <select id="ic-priority" class="input" (change)="priority.set($any($event.target).value)">
           @for (p of priorityOrder; track p) {
-            <option [value]="p" [selected]="priority() === p">{{ priorityInfo[p].label }}</option>
+            <option [value]="p" [selected]="priority() === p">{{ i18n.priority(p) }}</option>
           }
         </select>
       </div>
@@ -109,17 +108,17 @@
         class="btn-ghost -ml-2 h-8 px-2 text-brand-600 dark:text-brand-400"
         (click)="showMore.set(true)"
       >
-        <app-icon name="plus" [size]="16" /> Ещё поля
+        <app-icon name="plus" [size]="16" /> {{ 'create.moreFields' | t }}
       </button>
     } @else {
       <div>
-        <label class="label" for="ic-labels">Метки</label>
+        <label class="label" for="ic-labels">{{ 'field.labels' | t }}</label>
         <app-labels-input inputId="ic-labels" [(value)]="labels" />
       </div>
 
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label class="label" for="ic-points">Story points</label>
+          <label class="label" for="ic-points">{{ 'field.storyPoints' | t }}</label>
           <input
             id="ic-points"
             class="input"
@@ -131,7 +130,7 @@
           />
         </div>
         <div>
-          <label class="label" for="ic-due">Срок</label>
+          <label class="label" for="ic-due">{{ 'field.dueDate' | t }}</label>
           <input
             id="ic-due"
             class="input"
@@ -145,13 +144,13 @@
       @if (!isSubtask && type() !== 'epic') {
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="label" for="ic-epic">Эпик</label>
+            <label class="label" for="ic-epic">{{ 'field.epic' | t }}</label>
             <select
               id="ic-epic"
               class="input"
               (change)="parentId.set($any($event.target).value || null)"
             >
-              <option value="">Без эпика</option>
+              <option value="">{{ 'common.noEpic' | t }}</option>
               @for (e of epics(); track e.id) {
                 <option [value]="e.id" [selected]="parentId() === e.id">
                   {{ issueKey(e) }} {{ e.title }}
@@ -160,16 +159,16 @@
             </select>
           </div>
           <div>
-            <label class="label" for="ic-sprint">Спринт</label>
+            <label class="label" for="ic-sprint">{{ 'field.sprintId' | t }}</label>
             <select
               id="ic-sprint"
               class="input"
               (change)="sprintId.set($any($event.target).value || null)"
             >
-              <option value="">Бэклог</option>
+              <option value="">{{ 'common.backlog' | t }}</option>
               @for (s of projectSprints(); track s.id) {
                 <option [value]="s.id" [selected]="sprintId() === s.id">
-                  {{ s.name }}{{ s.state === 'active' ? ' (активный)' : '' }}
+                  {{ s.name }} {{ s.state === 'active' ? ('create.active' | t) : '' }}
                 </option>
               }
             </select>
@@ -187,8 +186,8 @@
         [checked]="createAnother()"
         (change)="createAnother.set($any($event.target).checked)"
       />
-      Создать ещё одну
+      {{ 'create.another' | t }}
     </label>
-    <button type="submit" form="issue-create" class="btn-primary">Создать</button>
+    <button type="submit" form="issue-create" class="btn-primary">{{ 'common.create' | t }}</button>
   </div>
 </app-dialog-frame>

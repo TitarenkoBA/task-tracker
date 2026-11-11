@@ -3,11 +3,12 @@ import { COLOR_CLASSES } from '../../core/models/catalog';
 import { Person } from '../../core/models/entities';
 import { initials } from '../../core/services/people.service';
 import { Icon } from './icon';
+import { TranslatePipe } from '../../core/i18n/i18n.service';
 
 /** Круглый аватар с инициалами. Без человека — пунктирный кружок «не назначено». */
 @Component({
   selector: 'app-avatar',
-  imports: [Icon],
+  imports: [Icon, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'inline-flex shrink-0' },
   template: `
@@ -23,7 +24,7 @@ import { Icon } from './icon';
       <span
         class="inline-flex items-center justify-center rounded-full border border-dashed border-slate-300 text-slate-400 dark:border-slate-600"
         [class]="sizeClass()"
-        title="Не назначено"
+        [title]="'avatar.unassigned' | t"
       >
         <app-icon name="user" [size]="size() === 'sm' ? 12 : 16" />
       </span>

@@ -7,33 +7,34 @@ import { ProjectService } from '../../core/services/project.service';
 import { ToastService } from '../../core/services/toast.service';
 import { DialogFrame } from '../../shared/dialog/dialog-frame';
 import { Icon } from '../../shared/ui/icon';
+import { I18n, TranslatePipe } from '../../core/i18n/i18n.service';
 
 /** Создание проекта (без данных) или редактирование (передаётся проект). */
 @Component({
   selector: 'app-project-form-dialog',
-  imports: [DialogFrame, Icon],
+  imports: [DialogFrame, Icon, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-dialog-frame [title]="existing ? 'Проект' : 'Новый проект'">
+    <app-dialog-frame [title]="(existing ? 'projectForm.title' : 'nav.newProject') | t">
       <form id="project-form" class="space-y-4" (submit)="$event.preventDefault(); submit()">
         <div>
-          <label class="label" for="pf-name">Название</label>
+          <label class="label" for="pf-name">{{ 'projectForm.name' | t }}</label>
           <input
             id="pf-name"
             class="input"
-            placeholder="Например, «Сайт компании»"
+            [placeholder]="'projectForm.namePlaceholder' | t"
             autocomplete="off"
             cdkFocusInitial
             [value]="name()"
             (input)="onName($any($event.target).value)"
           />
           @if (submitted() && !name().trim()) {
-            <p class="mt-1 text-xs text-rose-600">Введите название</p>
+            <p class="mt-1 text-xs text-rose-600">{{ 'projectForm.nameRequired' | t }}</p>
           }
         </div>
 
         <div>
-          <label class="label" for="pf-key">Ключ</label>
+          <label class="label" for="pf-key">{{ 'field.key' | t }}</label>
           <input
             id="pf-key"
             class="input font-mono uppercase"
@@ -49,19 +50,15 @@ import { Icon } from '../../shared/ui/icon';
             <p class="mt-1 text-xs text-slate-500">
               {{
                 existing
-                  ? 'Ключ нельзя изменить — на него ссылаются задачи.'
-                  : 'Задачи будут называться ' +
-                    (key() || 'KEY') +
-                    '-1, ' +
-                    (key() || 'KEY') +
-                    '-2…'
+                  ? ('projectForm.keyLocked' | t)
+                  : ('projectForm.keyHint' | t: { key: key() || 'KEY' })
               }}
             </p>
           }
         </div>
 
         <div>
-          <label class="label" for="pf-desc">Описание</label>
+          <label class="label" for="pf-desc">{{ 'projectForm.description' | t }}</label>
           <textarea
             id="pf-desc"
             class="input"
@@ -72,7 +69,7 @@ import { Icon } from '../../shared/ui/icon';
         </div>
 
         <fieldset>
-          <legend class="label">Цвет</legend>
+          <legend class="label">{{ 'projectForm.color' | t }}</legend>
           <div class="flex flex-wrap gap-2">
             @for (c of colorList; track c) {
               <button
@@ -97,9 +94,11 @@ import { Icon } from '../../shared/ui/icon';
         </fieldset>
       </form>
       <ng-container footer>
-        <button type="button" class="btn-secondary" (click)="ref.close()">Отмена</button>
+        <button type="button" class="btn-secondary" (click)="ref.close()">
+          {{ 'common.cancel' | t }}
+        </button>
         <button type="submit" form="project-form" class="btn-primary">
-          {{ existing ? 'Сохранить' : 'Создать проект' }}
+          {{ (existing ? 'common.save' : 'projectForm.create') | t }}
         </button>
       </ng-container>
     </app-dialog-frame>
@@ -111,6 +110,7 @@ export class ProjectFormDialog {
   private readonly projects = inject(ProjectService);
   private readonly toasts = inject(ToastService);
   private readonly router = inject(Router);
+  private readonly i18n = inject(I18n);
 
   protected readonly colors = COLOR_CLASSES;
   protected readonly colorList = PROJECT_COLORS;
@@ -158,7 +158,7 @@ export class ProjectFormDialog {
       description: this.description(),
       color: this.color(),
     });
-    this.toasts.success(`Проект «${project.name}» создан`);
+    this.toasts.success(this.i18n.t('projectForm.created', { name: project.name }));
     this.ref.close(project);
     void this.router.navigate(['/p', project.key, 'board']);
   }

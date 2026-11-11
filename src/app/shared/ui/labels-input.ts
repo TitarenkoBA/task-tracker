@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { IssueService } from '../../core/services/issue.service';
 import { Icon } from './icon';
+import { TranslatePipe } from '../../core/i18n/i18n.service';
 
 /**
  * Ввод меток «чипсами»: Enter или запятая добавляет метку,
@@ -16,7 +17,7 @@ import { Icon } from './icon';
  */
 @Component({
   selector: 'app-labels-input',
-  imports: [Icon],
+  imports: [Icon, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div
@@ -29,7 +30,7 @@ import { Icon } from './icon';
           <button
             type="button"
             class="-mr-1 opacity-60 hover:opacity-100"
-            [attr.aria-label]="'Удалить метку ' + label"
+            [attr.aria-label]="'labels.remove' | t: { label }"
             (click)="remove(label)"
           >
             <app-icon name="x" [size]="12" />
@@ -42,7 +43,7 @@ import { Icon } from './icon';
         [id]="inputId()"
         [attr.list]="inputId() + '-list'"
         [value]="draft()"
-        [placeholder]="value().length ? '' : 'Добавить метку…'"
+        [placeholder]="value().length ? '' : ('labels.placeholder' | t)"
         (input)="onInput(field.value)"
         (keydown)="onKeydown($event)"
         (blur)="commit()"

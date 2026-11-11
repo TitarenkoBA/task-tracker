@@ -1,15 +1,15 @@
-<app-page-header title="Настройки" />
+<app-page-header [title]="'nav.settings' | t" />
 
 <div class="mx-auto max-w-3xl space-y-6 px-4 py-3 lg:px-8">
   <!-- Профиль -->
   <section>
-    <h2 class="section-title">Профиль</h2>
+    <h2 class="section-title">{{ 'settings.profile' | t }}</h2>
     <div class="card p-4">
       @if (people.me(); as me) {
         <div class="flex items-center gap-4">
           <app-avatar [person]="me" size="lg" />
           <div class="min-w-0 flex-1">
-            <label class="label" for="me-name">Ваше имя</label>
+            <label class="label" for="me-name">{{ 'settings.yourName' | t }}</label>
             <input
               id="me-name"
               class="input"
@@ -19,17 +19,14 @@
             />
           </div>
         </div>
-        <p class="mt-3 text-xs text-slate-500">
-          Это имя видно в задачах и комментариях. Когда появится совместная работа, его увидят и
-          другие участники.
-        </p>
+        <p class="mt-3 text-xs text-slate-500">{{ 'settings.nameHint' | t }}</p>
       }
     </div>
   </section>
 
   <!-- Участники -->
   <section>
-    <h2 class="section-title">Участники</h2>
+    <h2 class="section-title">{{ 'settings.people' | t }}</h2>
     <div class="card divide-y divide-slate-100 dark:divide-slate-800">
       @for (person of others(); track person.id) {
         <div class="flex items-center gap-3 px-4 py-2.5">
@@ -48,7 +45,7 @@
             <button
               type="button"
               class="btn-icon size-9"
-              [attr.aria-label]="'Переименовать ' + person.name"
+              [attr.aria-label]="'settings.rename' | t: { name: person.name }"
               (click)="editingPersonId.set(person.id)"
             >
               <app-icon name="pencil" [size]="16" />
@@ -56,7 +53,7 @@
             <button
               type="button"
               class="btn-icon size-9 hover:text-rose-600"
-              [attr.aria-label]="'Удалить ' + person.name"
+              [attr.aria-label]="'settings.remove' | t: { name: person.name }"
               (click)="removePerson(person)"
             >
               <app-icon name="trash" [size]="16" />
@@ -72,17 +69,17 @@
         <input
           #newPerson
           class="h-10 flex-1 bg-transparent text-base outline-none placeholder:text-slate-400 sm:text-sm"
-          placeholder="Имя нового участника"
+          [placeholder]="'settings.newPerson' | t"
         />
-        <button type="submit" class="btn-ghost h-9">Добавить</button>
+        <button type="submit" class="btn-ghost h-9">{{ 'common.add' | t }}</button>
       </form>
     </div>
-    <p class="mt-2 px-1 text-xs text-slate-500">Участников можно назначать исполнителями задач.</p>
+    <p class="mt-2 px-1 text-xs text-slate-500">{{ 'settings.peopleHint' | t }}</p>
   </section>
 
-  <!-- Оформление -->
+  <!-- Оформление и язык -->
   <section>
-    <h2 class="section-title">Оформление</h2>
+    <h2 class="section-title">{{ 'settings.appearance' | t }}</h2>
     <div class="card grid grid-cols-3 gap-1 p-1">
       @for (t of themes; track t.value) {
         <button
@@ -97,7 +94,31 @@
           (click)="theme.set(t.value)"
         >
           <app-icon [name]="t.icon" />
-          {{ t.label }}
+          {{ t.label | t }}
+        </button>
+      }
+    </div>
+
+    <h3 class="mt-4 mb-2 flex items-center gap-1.5 px-1 text-sm font-semibold text-slate-500">
+      <app-icon name="globe" [size]="16" /> {{ 'settings.language' | t }} · Language
+    </h3>
+    <div class="card grid grid-cols-2 gap-1 p-1" role="radiogroup">
+      @for (lang of languages; track lang.code) {
+        <button
+          type="button"
+          role="radio"
+          class="flex items-center justify-center gap-2 rounded-xl py-3 text-sm transition"
+          [class]="
+            i18n.lang() === lang.code
+              ? 'bg-brand-50 font-medium text-brand-700 dark:bg-brand-950 dark:text-brand-400'
+              : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
+          "
+          [attr.aria-checked]="i18n.lang() === lang.code"
+          [attr.lang]="lang.code"
+          (click)="setLanguage(lang.code)"
+        >
+          <span class="font-mono text-xs uppercase opacity-60">{{ lang.code }}</span>
+          {{ lang.label }}
         </button>
       }
     </div>
@@ -105,19 +126,16 @@
 
   <!-- Данные -->
   <section>
-    <h2 class="section-title">Данные</h2>
+    <h2 class="section-title">{{ 'settings.data' | t }}</h2>
     <div class="card divide-y divide-slate-100 dark:divide-slate-800">
       <div class="p-4">
-        <p class="text-sm text-slate-600 dark:text-slate-300">
-          Все данные хранятся только в этом браузере. Делайте резервную копию, чтобы перенести их на
-          другое устройство или не потерять при очистке браузера.
-        </p>
+        <p class="text-sm text-slate-600 dark:text-slate-300">{{ 'settings.dataHint' | t }}</p>
         <div class="mt-3 flex flex-wrap gap-2">
           <button type="button" class="btn-primary" (click)="exportJson()">
-            <app-icon name="download" [size]="18" /> Экспорт (JSON)
+            <app-icon name="download" [size]="18" /> {{ 'settings.exportJson' | t }}
           </button>
           <label class="btn-secondary">
-            <app-icon name="upload" [size]="18" /> Импорт
+            <app-icon name="upload" [size]="18" /> {{ 'settings.import' | t }}
             <input
               #fileInput
               type="file"
@@ -127,7 +145,7 @@
             />
           </label>
           <button type="button" class="btn-ghost" (click)="exportCsv()">
-            <app-icon name="download" [size]="18" /> Задачи в CSV
+            <app-icon name="download" [size]="18" /> {{ 'settings.exportCsv' | t }}
           </button>
         </div>
       </div>
@@ -135,28 +153,31 @@
       @if (storage(); as s) {
         <div class="flex flex-wrap items-center gap-3 p-4 text-sm">
           <div class="flex-1">
-            <p>Занято {{ formatBytes(s.used) }} из {{ formatBytes(s.quota) }}</p>
-            <p class="text-xs" [class]="s.persisted ? 'text-emerald-600' : 'text-amber-600'">
+            <p>
               {{
-                s.persisted
-                  ? 'Данные защищены от автоматической очистки'
-                  : 'Браузер может удалить данные при нехватке места'
+                'settings.storageUsed'
+                  | t: { used: formatBytes(s.used), quota: formatBytes(s.quota) }
               }}
+            </p>
+            <p class="text-xs" [class]="s.persisted ? 'text-emerald-600' : 'text-amber-600'">
+              {{ (s.persisted ? 'settings.persisted' : 'settings.notPersisted') | t }}
             </p>
           </div>
           @if (!s.persisted) {
-            <button type="button" class="btn-secondary h-9" (click)="persist()">Защитить</button>
+            <button type="button" class="btn-secondary h-9" (click)="persist()">
+              {{ 'settings.protect' | t }}
+            </button>
           }
         </div>
       }
 
       <div class="flex flex-wrap items-center gap-3 p-4">
         <div class="flex-1 text-sm">
-          <p class="font-medium text-rose-600">Удалить все данные</p>
-          <p class="text-xs text-slate-500">Необратимо. Сначала сделайте экспорт.</p>
+          <p class="font-medium text-rose-600">{{ 'settings.deleteAll' | t }}</p>
+          <p class="text-xs text-slate-500">{{ 'settings.deleteAllHint' | t }}</p>
         </div>
         <button type="button" class="btn-secondary h-9 text-rose-600!" (click)="resetAll()">
-          Удалить…
+          {{ 'settings.deleteAllButton' | t }}
         </button>
       </div>
     </div>
@@ -164,7 +185,7 @@
 
   <!-- Совместная работа (задел на будущее) -->
   <section>
-    <h2 class="section-title">Совместная работа</h2>
+    <h2 class="section-title">{{ 'settings.collab' | t }}</h2>
     <div class="card flex gap-4 p-4">
       <span
         class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300"
@@ -172,40 +193,44 @@
         <app-icon name="users" />
       </span>
       <div class="text-sm">
-        <p class="font-medium">Скоро: работа вместе в реальном времени</p>
+        <p class="font-medium">{{ 'settings.collabTitle' | t }}</p>
         <p class="mt-1 text-slate-500">
-          Устройства смогут соединяться напрямую (P2P), без сервера, и видеть изменения друг друга
-          мгновенно. Статус:
-          <span class="font-medium">{{
-            sync.status() === 'offline' ? 'только это устройство' : sync.status()
-          }}</span
-          >.
+          {{
+            'settings.collabText'
+              | t
+                : {
+                    status:
+                      sync.status() === 'offline' ? ('settings.collabOffline' | t) : sync.status(),
+                  }
+          }}
         </p>
-        <p class="mt-1 font-mono text-xs text-slate-400">ID устройства: {{ replicaId }}</p>
+        <p class="mt-1 font-mono text-xs text-slate-400">
+          {{ 'settings.deviceId' | t: { id: replicaId } }}
+        </p>
       </div>
     </div>
   </section>
 
   <!-- Приложение -->
   <section>
-    <h2 class="section-title">Приложение</h2>
+    <h2 class="section-title">{{ 'settings.app' | t }}</h2>
     <div class="card divide-y divide-slate-100 text-sm dark:divide-slate-800">
       @if (pwa.canInstall()) {
         <div class="flex items-center gap-3 p-4">
-          <p class="flex-1">
-            Установите Task Tracker как приложение — он будет открываться в отдельном окне и
-            работать офлайн.
-          </p>
-          <button type="button" class="btn-primary h-9" (click)="pwa.install()">Установить</button>
+          <p class="flex-1">{{ 'settings.installText' | t }}</p>
+          <button type="button" class="btn-primary h-9" (click)="pwa.install()">
+            {{ 'settings.install' | t }}
+          </button>
         </div>
       }
       <div class="hidden p-4 lg:block">
-        <p class="mb-2 font-medium">Горячие клавиши</p>
+        <p class="mb-2 font-medium">{{ 'settings.shortcuts' | t }}</p>
         <ul class="space-y-1 text-slate-600 dark:text-slate-300">
-          <li><kbd class="kbd">C</kbd> — создать задачу</li>
-          <li><kbd class="kbd">/</kbd> — поиск задач</li>
+          <li><kbd class="kbd">C</kbd> {{ 'settings.shortcutCreate' | t }}</li>
+          <li><kbd class="kbd">/</kbd> {{ 'settings.shortcutSearch' | t }}</li>
           <li>
-            <kbd class="kbd">Ctrl</kbd> + <kbd class="kbd">Enter</kbd> — отправить комментарий
+            <kbd class="kbd">Ctrl</kbd> + <kbd class="kbd">Enter</kbd>
+            {{ 'settings.shortcutComment' | t }}
           </li>
         </ul>
       </div>

@@ -8,16 +8,18 @@ import { ProjectService } from '../../core/services/project.service';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { Icon } from '../../shared/ui/icon';
 import { PageHeader } from '../../shared/ui/page-header';
+import { TranslatePipe } from '../../core/i18n/i18n.service';
 import { ActionsService } from '../actions.service';
 
 @Component({
   selector: 'app-projects-page',
-  imports: [RouterLink, PageHeader, EmptyState, Icon],
+  imports: [RouterLink, PageHeader, EmptyState, Icon, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-page-header title="Проекты">
+    <app-page-header [title]="'nav.projects' | t">
       <button actions type="button" class="btn-primary" (click)="actions.createProject()">
-        <app-icon name="plus" [size]="18" /> <span class="hidden sm:inline">Проект</span>
+        <app-icon name="plus" [size]="18" />
+        <span class="hidden sm:inline">{{ 'projects.add' | t }}</span>
       </button>
     </app-page-header>
 
@@ -52,7 +54,7 @@ import { ActionsService } from '../actions.service';
               }
               <div class="mt-4">
                 <div class="mb-1.5 flex justify-between text-xs text-slate-500">
-                  <span>{{ card.done }} из {{ card.total }} готово</span>
+                  <span>{{ 'projects.progress' | t: { done: card.done, total: card.total } }}</span>
                   <span>{{ card.percent }}%</span>
                 </div>
                 <div class="h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
@@ -68,14 +70,14 @@ import { ActionsService } from '../actions.service';
       } @else {
         <app-empty-state
           icon="folder"
-          title="Создайте первый проект"
-          text="Проект объединяет задачи, доску и спринты. Или загрузите демо, чтобы осмотреться."
+          [title]="'projects.emptyTitle' | t"
+          [text]="'projects.emptyText' | t"
         >
           <button type="button" class="btn-primary" (click)="actions.createProject()">
-            <app-icon name="plus" [size]="18" /> Новый проект
+            <app-icon name="plus" [size]="18" /> {{ 'nav.newProject' | t }}
           </button>
           <button type="button" class="btn-secondary" (click)="createDemo()">
-            <app-icon name="sparkles" [size]="18" /> Демо-проект
+            <app-icon name="sparkles" [size]="18" /> {{ 'projects.demo' | t }}
           </button>
         </app-empty-state>
       }

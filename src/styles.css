@@ -5,6 +5,8 @@
  */
 @import 'tailwindcss';
 @import '@angular/cdk/overlay-prebuilt.css';
+/* Красивые стили для текста из Markdown (классы prose-*) */
+@plugin '@tailwindcss/typography';
 
 /* Тёмная тема включается классом `dark` на <html> (см. ThemeService). */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -145,6 +147,24 @@
 }
 .cdk-global-overlay-wrapper:has(.app-dialog) {
   @apply items-end! sm:items-center!;
+}
+
+/* Markdown: инлайн-код и пункты чек-листа */
+.markdown :not(pre) > code {
+  @apply rounded bg-slate-100 px-1 py-0.5 text-[0.85em] font-normal dark:bg-slate-800;
+}
+.markdown li:has(> .md-check),
+.markdown li:has(> p > .md-check) {
+  @apply list-none;
+}
+.markdown ul:has(> li > .md-check) {
+  @apply pl-1;
+}
+.markdown .md-check {
+  @apply mr-1 text-slate-400;
+}
+.markdown .md-check-done {
+  @apply text-emerald-500;
 }
 
 /* Перетаскивание (CDK drag-drop) */

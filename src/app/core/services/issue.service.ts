@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { DataStore } from '../data/data-store';
-import { FIELD_LABELS, ISSUE_TYPES, PRIORITIES } from '../models/catalog';
+import { I18n } from '../i18n/i18n.service';
+import { TRACKED_FIELDS } from '../models/catalog';
 import {
   Activity,
   Comment,
@@ -44,6 +45,7 @@ export class IssueService {
   private readonly store = inject(DataStore);
   private readonly projects = inject(ProjectService);
   private readonly people = inject(PeopleService);
+  private readonly i18n = inject(I18n);
 
   /** Все живые задачи (реактивно). */
   readonly issues = this.store.list('issues');
@@ -86,13 +88,13 @@ export class IssueService {
 
   create(input: IssueInput): Issue {
     const project = this.projects.get(input.projectId);
-    if (!project) throw new Error('Проект не найден');
+    if (!project) throw new Error(this.i18n.t('error.projectNotFound'));
     const title = input.title.trim();
-    if (!title) throw new Error('Введите название задачи');
+    if (!title) throw new Error(this.i18n.t('error.titleRequired'));
 
     const parent = this.get(input.parentId);
     const type = input.type ?? 'task';
-    if (type === 'subtask' && !parent) throw new Error('У подзадачи должен быть родитель');
+    if (type === 'subtask' && !parent) throw new Error(this.i18n.t('error.subtaskParent'));
 
     const projectOrders = this.issues()
       .filter((i) => i.projectId === project.id)
@@ -124,13 +126,13 @@ export class IssueService {
     const before = this.get(id);
     if (!before) return undefined;
     if (patch.title !== undefined && !patch.title.trim())
-      throw new Error('Название не может быть пустым');
+      throw new Error(this.i18n.t('error.titleEmpty'));
     if (patch.labels) patch = { ...patch, labels: normalizeLabels(patch.labels) };
 
     const after = this.store.update('issues', id, patch);
     if (!after) return undefined;
 
-    for (const field of Object.keys(FIELD_LABELS) as (keyof Issue)[]) {
+    for (const field of TRACKED_FIELDS) {
       if (JSON.stringify(before[field]) === JSON.stringify(after[field])) continue;
       const describe =
         field === 'description' ? () => null : (v: unknown) => this.describe(field, v, after);
@@ -212,8 +214,9 @@ export class IssueService {
   }
 
   /**
-   * Человекочитаемое значение поля для истории. Сохраняется текстом,
-   * чтобы история оставалась понятной, даже если статус или человек удалён.
+   * Значение поля для истории. Имена статусов, людей и спринтов сохраняются текстом,
+   * чтобы история оставалась понятной, даже если их удалят. Приоритет и тип —
+   * кодом (high, ug): их подпись переводится при показе (I18n.historyValue).
    */
   private describe(field: keyof Issue, value: unknown, issue: Issue): string | null {
     if (value === null || value === undefined || value === '') return null;
@@ -226,10 +229,6 @@ export class IssueService {
       case 'assigneeId':
       case 'reporterId':
         return this.people.get(value as string)?.name ?? '—';
-      case 'priority':
-        return PRIORITIES[value as IssuePriority]?.label ?? String(value);
-      case 'type':
-        return ISSUE_TYPES[value as IssueType]?.label ?? String(value);
       case 'sprintId':
         return this.store.get('sprints', value as string)?.name ?? '—';
       case 'parentId': {

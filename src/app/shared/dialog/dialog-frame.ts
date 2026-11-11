@@ -1,6 +1,7 @@
 import { DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { Icon } from '../ui/icon';
+import { TranslatePipe } from '../../core/i18n/i18n.service';
 
 /**
  * Каркас диалога: заголовок с крестиком, прокручиваемое тело и подвал.
@@ -14,7 +15,7 @@ import { Icon } from '../ui/icon';
  */
 @Component({
   selector: 'app-dialog-frame',
-  imports: [Icon],
+  imports: [Icon, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class:
@@ -26,7 +27,12 @@ import { Icon } from '../ui/icon';
     ></div>
     <header class="flex shrink-0 items-center gap-2 px-5 pt-3 pb-2 sm:pt-5">
       <h2 class="flex-1 text-lg font-semibold">{{ title() }}</h2>
-      <button type="button" class="btn-icon -mr-2" aria-label="Закрыть" (click)="ref.close()">
+      <button
+        type="button"
+        class="btn-icon -mr-2"
+        [attr.aria-label]="'common.close' | t"
+        (click)="ref.close()"
+      >
         <app-icon name="x" />
       </button>
     </header>

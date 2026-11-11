@@ -1,5 +1,8 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { DataStore } from '../data/data-store';
+import { I18n } from '../i18n/i18n.service';
+import { ru } from '../i18n/ru';
+import { en } from '../i18n/en';
 import { EntityId, PROJECT_COLORS, Person } from '../models/entities';
 import { SettingsService } from './settings.service';
 
@@ -8,6 +11,7 @@ import { SettingsService } from './settings.service';
 export class PeopleService {
   private readonly store = inject(DataStore);
   private readonly settings = inject(SettingsService);
+  private readonly i18n = inject(I18n);
 
   readonly people = computed(() =>
     [...this.store.list('people')()].sort((a, b) => a.name.localeCompare(b.name)),
@@ -41,19 +45,32 @@ export class PeopleService {
     if (this.settings.currentUserId() === id) this.settings.set('currentUserId', null);
   }
 
-  /** При первом запуске создаёт профиль «Я», чтобы было кого назначать. */
+  /** При первом запуске создаёт профиль «Я» / «Me», чтобы было кого назначать. */
   ensureMe(): Person {
     const existing = this.me();
     if (existing) return existing;
-    const person = this.create('Я');
+    const person = this.create(this.i18n.t('people.me'));
     this.settings.set('currentUserId', person.id);
     return person;
+  }
+
+  /** Имя профиля ещё стандартное («Я» / «Me») — пользователь его не менял. */
+  hasDefaultName(person: Person | null | undefined): boolean {
+    return !!person && DEFAULT_ME_NAMES.includes(person.name);
+  }
+
+  /** После смены языка перевести стандартное имя профиля. */
+  translateDefaultName(): void {
+    const me = this.me();
+    if (this.hasDefaultName(me)) this.update(me!.id, { name: this.i18n.t('people.me') });
   }
 
   setMe(id: EntityId): void {
     this.settings.set('currentUserId', id);
   }
 }
+
+const DEFAULT_ME_NAMES = [ru['people.me'], en['people.me'] as string];
 
 /** Инициалы для аватара: «Иван Петров» → «ИП». */
 export function initials(name: string): string {

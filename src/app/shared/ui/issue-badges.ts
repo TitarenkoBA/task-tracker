@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { ISSUE_TYPES, PRIORITIES, STATUS_CATEGORIES } from '../../core/models/catalog';
 import { IssuePriority, IssueType, WorkflowStatus } from '../../core/models/entities';
 import { Icon } from './icon';
+import { I18n } from '../../core/i18n/i18n.service';
 
 /** Цветной квадратик с иконкой типа задачи. */
 @Component({
@@ -13,7 +14,7 @@ import { Icon } from './icon';
     <span
       class="inline-flex size-5 items-center justify-center rounded-md"
       [class]="info().classes"
-      [title]="info().label"
+      [title]="label()"
     >
       <app-icon [name]="info().icon" [size]="13" [strokeWidth]="2.5" />
     </span>
@@ -22,6 +23,8 @@ import { Icon } from './icon';
 export class TypeIcon {
   readonly type = input.required<IssueType>();
   protected readonly info = computed(() => ISSUE_TYPES[this.type()]);
+  private readonly i18n = inject(I18n);
+  protected readonly label = computed(() => this.i18n.issueType(this.type()));
 }
 
 /** Иконка приоритета (стрелки). */
@@ -31,7 +34,7 @@ export class TypeIcon {
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'inline-flex shrink-0' },
   template: `
-    <span [class]="info().classes" [title]="'Приоритет: ' + info().label">
+    <span [class]="info().classes" [title]="label()">
       <app-icon [name]="info().icon" [size]="18" [strokeWidth]="2.5" />
     </span>
   `,
@@ -39,6 +42,10 @@ export class TypeIcon {
 export class PriorityIcon {
   readonly priority = input.required<IssuePriority>();
   protected readonly info = computed(() => PRIORITIES[this.priority()]);
+  private readonly i18n = inject(I18n);
+  protected readonly label = computed(() =>
+    this.i18n.t('priority.tooltip', { name: this.i18n.priority(this.priority()) }),
+  );
 }
 
 /** Плашка статуса, окрашенная по категории. */
