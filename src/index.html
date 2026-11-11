@@ -1,15 +1,30 @@
-<!doctype html>
-<html lang="en">
+﻿<!doctype html>
+<html lang="ru">
   <head>
     <meta charset="utf-8" />
-    <title>TaskTracker</title>
+    <title>Task Tracker</title>
     <base href="/" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Простой трекер задач: доска, бэклог, спринты. Работает офлайн, данные хранятся на устройстве." />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Task Tracker" />
+    <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png" />
     <link rel="manifest" href="manifest.webmanifest" />
+    <script>
+      // Применяем тёмную тему до загрузки Angular, чтобы экран не «мигал» белым.
+      try {
+        var s = JSON.parse(localStorage.getItem('task-tracker.settings') || '{}');
+        var dark = s.theme === 'dark' || (s.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+        if (dark) document.documentElement.classList.add('dark');
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <app-root></app-root>
-    <noscript>Please enable JavaScript to continue using this application.</noscript>
+    <noscript>Для работы приложения включите JavaScript.</noscript>
   </body>
 </html>

@@ -1,0 +1,142 @@
+<app-dialog-frame [title]="isSubtask ? 'Новая подзадача' : 'Новая задача'">
+  <form id="issue-create" class="space-y-4" (submit)="$event.preventDefault(); submit()">
+    @if (parent(); as p) {
+      <p class="text-sm text-slate-500">
+        Родитель: <span class="font-medium text-slate-700 dark:text-slate-200">{{ issueKey(p) }} {{ p.title }}</span>
+      </p>
+    } @else {
+      <div>
+        <label class="label" for="ic-project">Проект</label>
+        <select id="ic-project" class="input" [value]="projectId()" (change)="projectId.set($any($event.target).value); sprintId.set(null); parentId.set(null)">
+          @for (p of projects.projects(); track p.id) {
+            <option [value]="p.id">{{ p.name }} ({{ p.key }})</option>
+          }
+        </select>
+      </div>
+    }
+
+    @if (!isSubtask) {
+      <fieldset>
+        <legend class="label">Тип</legend>
+        <div class="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1">
+          @for (t of types; track t) {
+            <button
+              type="button"
+              class="inline-flex h-9 shrink-0 items-center gap-2 rounded-xl border px-3 text-sm transition"
+              [class]="type() === t
+                ? 'border-brand-500 bg-brand-50 font-medium text-brand-700 dark:bg-brand-950 dark:text-brand-400'
+                : 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'"
+              [attr.aria-pressed]="type() === t"
+              (click)="type.set(t)"
+            >
+              <app-type-icon [type]="t" />
+              {{ typeInfo[t].label }}
+            </button>
+          }
+        </div>
+      </fieldset>
+    }
+
+    <div>
+      <label class="label" for="ic-title">Название</label>
+      <input
+        id="ic-title"
+        class="input"
+        [class.border-rose-500]="titleError()"
+        placeholder="Что нужно сделать?"
+        autocomplete="off"
+        cdkFocusInitial
+        [value]="title()"
+        (input)="title.set($any($event.target).value)"
+      />
+      @if (titleError()) {
+        <p class="mt-1 text-xs text-rose-600">Введите название</p>
+      }
+    </div>
+
+    <div>
+      <label class="label" for="ic-desc">Описание</label>
+      <textarea
+        id="ic-desc"
+        class="input"
+        rows="3"
+        placeholder="Подробности, ссылки, критерии готовности…"
+        [value]="description()"
+        (input)="description.set($any($event.target).value)"
+      ></textarea>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="label" for="ic-assignee">Исполнитель</label>
+        <select id="ic-assignee" class="input" (change)="assigneeId.set($any($event.target).value || null)">
+          <option value="">Не назначен</option>
+          @for (p of people.people(); track p.id) {
+            <option [value]="p.id" [selected]="assigneeId() === p.id">{{ p.name }}</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label class="label" for="ic-priority">Приоритет</label>
+        <select id="ic-priority" class="input" (change)="priority.set($any($event.target).value)">
+          @for (p of priorityOrder; track p) {
+            <option [value]="p" [selected]="priority() === p">{{ priorityInfo[p].label }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    @if (!showMore()) {
+      <button type="button" class="btn-ghost -ml-2 h-8 px-2 text-brand-600 dark:text-brand-400" (click)="showMore.set(true)">
+        <app-icon name="plus" [size]="16" /> Ещё поля
+      </button>
+    } @else {
+      <div>
+        <label class="label" for="ic-labels">Метки</label>
+        <app-labels-input inputId="ic-labels" [(value)]="labels" />
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="label" for="ic-points">Story points</label>
+          <input id="ic-points" class="input" type="number" min="0" inputmode="numeric" [value]="storyPoints() ?? ''" (input)="setNumber($any($event.target).value)" />
+        </div>
+        <div>
+          <label class="label" for="ic-due">Срок</label>
+          <input id="ic-due" class="input" type="date" [value]="dueDate() ?? ''" (change)="dueDate.set($any($event.target).value || null)" />
+        </div>
+      </div>
+
+      @if (!isSubtask && type() !== 'epic') {
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="label" for="ic-epic">Эпик</label>
+            <select id="ic-epic" class="input" (change)="parentId.set($any($event.target).value || null)">
+              <option value="">Без эпика</option>
+              @for (e of epics(); track e.id) {
+                <option [value]="e.id" [selected]="parentId() === e.id">{{ issueKey(e) }} {{ e.title }}</option>
+              }
+            </select>
+          </div>
+          <div>
+            <label class="label" for="ic-sprint">Спринт</label>
+            <select id="ic-sprint" class="input" (change)="sprintId.set($any($event.target).value || null)">
+              <option value="">Бэклог</option>
+              @for (s of projectSprints(); track s.id) {
+                <option [value]="s.id" [selected]="sprintId() === s.id">{{ s.name }}{{ s.state === 'active' ? ' (активный)' : '' }}</option>
+              }
+            </select>
+          </div>
+        </div>
+      }
+    }
+  </form>
+
+  <div footer class="flex w-full items-center gap-3">
+    <label class="mr-auto flex items-center gap-2 py-2 text-sm text-slate-600 dark:text-slate-300">
+      <input type="checkbox" class="size-4 accent-brand-600" [checked]="createAnother()" (change)="createAnother.set($any($event.target).checked)" />
+      Создать ещё одну
+    </label>
+    <button type="submit" form="issue-create" class="btn-primary">Создать</button>
+  </div>
+</app-dialog-frame>

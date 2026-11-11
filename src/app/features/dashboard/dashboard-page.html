@@ -1,0 +1,126 @@
+<div class="pt-safe">
+<div class="mx-auto max-w-7xl px-4 py-5 lg:px-8 lg:py-8">
+  <header class="mb-6 flex items-start gap-3">
+    <div class="flex-1">
+      <p class="text-sm text-slate-500 first-letter:uppercase dark:text-slate-400">{{ today }}</p>
+      <h1 class="text-2xl font-bold tracking-tight lg:text-3xl">{{ greeting() }}</h1>
+    </div>
+    <a routerLink="/settings" class="lg:hidden" aria-label="Профиль и настройки">
+      <app-avatar [person]="people.me()" size="md" />
+    </a>
+  </header>
+
+  @if (!projects.projects().length) {
+    <!-- Первый запуск -->
+    <section class="card overflow-hidden">
+      <div class="bg-gradient-to-br from-brand-600 to-violet-600 px-6 py-8 text-white">
+        <h2 class="text-xl font-bold">Добро пожаловать в Task Tracker</h2>
+        <p class="mt-2 max-w-lg text-sm text-white/80">
+          Задачи, доска, спринты и бэклог — прямо в браузере. Данные хранятся только на этом устройстве
+          и работают без интернета. Перенести их можно через экспорт в настройках.
+        </p>
+      </div>
+      <div class="grid gap-3 p-4 sm:grid-cols-2">
+        <button type="button" class="flex items-start gap-3 rounded-2xl border border-slate-200 p-4 text-left transition hover:border-brand-500 hover:bg-brand-50/50 dark:border-slate-800 dark:hover:bg-brand-950/30" (click)="actions.createProject()">
+          <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-700 dark:bg-brand-950 dark:text-brand-400"><app-icon name="plus" /></span>
+          <span>
+            <span class="block font-semibold">Создать проект</span>
+            <span class="block text-sm text-slate-500">Начать с чистого листа</span>
+          </span>
+        </button>
+        <button type="button" class="flex items-start gap-3 rounded-2xl border border-slate-200 p-4 text-left transition hover:border-brand-500 hover:bg-brand-50/50 dark:border-slate-800 dark:hover:bg-brand-950/30" (click)="createDemo()">
+          <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300"><app-icon name="sparkles" /></span>
+          <span>
+            <span class="block font-semibold">Открыть демо-проект</span>
+            <span class="block text-sm text-slate-500">Посмотреть, как всё устроено, на примере</span>
+          </span>
+        </button>
+      </div>
+    </section>
+  } @else {
+    <!-- Цифры -->
+    <section class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <button type="button" class="card p-4 text-left transition hover:shadow-md" (click)="showMine()">
+        <app-icon name="user" class="text-brand-500" />
+        <p class="mt-3 text-3xl font-bold">{{ stats().mine }}</p>
+        <p class="text-sm text-slate-500">мои открытые</p>
+      </button>
+      <div class="card p-4">
+        <app-icon name="alert" [class]="stats().overdue ? 'text-rose-500' : 'text-slate-400'" />
+        <p class="mt-3 text-3xl font-bold" [class.text-rose-600]="stats().overdue">{{ stats().overdue }}</p>
+        <p class="text-sm text-slate-500">просрочено</p>
+      </div>
+      <div class="card p-4">
+        <app-icon name="refresh" class="text-sky-500" />
+        <p class="mt-3 text-3xl font-bold">{{ stats().inProgress }}</p>
+        <p class="text-sm text-slate-500">в работе</p>
+      </div>
+      <div class="card p-4">
+        <app-icon name="check-circle" class="text-emerald-500" />
+        <p class="mt-3 text-3xl font-bold">{{ stats().doneThisWeek }}</p>
+        <p class="text-sm text-slate-500">готово за неделю</p>
+      </div>
+    </section>
+
+    <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <div class="min-w-0 space-y-6">
+        <!-- Мои задачи -->
+        <section>
+          <div class="mb-2 flex items-center justify-between px-1">
+            <h2 class="font-semibold">Назначены мне</h2>
+            @if (mine().length > 8) {
+              <button type="button" class="text-sm text-brand-600 hover:underline dark:text-brand-400" (click)="showMine()">Все {{ mine().length }}</button>
+            }
+          </div>
+          @if (mine().length) {
+            <div class="card divide-y divide-slate-100 overflow-hidden dark:divide-slate-800">
+              @for (issue of mine().slice(0, 8); track issue.id) {
+                <app-issue-row [issue]="issue" />
+              }
+            </div>
+          } @else {
+            <div class="card">
+              <app-empty-state icon="check-circle" title="Всё сделано!" text="На вас нет открытых задач." />
+            </div>
+          }
+        </section>
+
+        <!-- Сроки -->
+        @if (upcoming().length) {
+          <section>
+            <h2 class="mb-2 px-1 font-semibold">Ближайшие сроки</h2>
+            <div class="card divide-y divide-slate-100 overflow-hidden dark:divide-slate-800">
+              @for (issue of upcoming(); track issue.id) {
+                <app-issue-row [issue]="issue" />
+              }
+            </div>
+          </section>
+        }
+      </div>
+
+      <!-- Лента событий -->
+      <section>
+        <h2 class="mb-2 px-1 font-semibold">Последние события</h2>
+        <ol class="card space-y-4 p-4">
+          @for (item of feed(); track item.entry.id) {
+            <li class="flex gap-3 text-sm">
+              <app-avatar size="sm" [person]="people.get(item.entry.actorId)" class="mt-0.5" />
+              <p class="min-w-0 flex-1 leading-snug">
+                <span class="font-medium">{{ people.get(item.entry.actorId)?.name ?? 'Кто-то' }}</span>
+                {{ describe(item.entry) }}
+                <a class="font-medium text-brand-600 hover:underline dark:text-brand-400" [routerLink]="['/browse', issueKey(item.entry.issueId)]">
+                  {{ issueKey(item.entry.issueId) }}
+                </a>
+                <span class="block truncate text-slate-500">{{ item.issue!.title }}</span>
+                <span class="text-xs text-slate-400">{{ formatRelative(item.entry.createdAt) }}</span>
+              </p>
+            </li>
+          } @empty {
+            <li class="text-sm text-slate-500">Пока ничего не происходило</li>
+          }
+        </ol>
+      </section>
+    </div>
+  }
+</div>
+</div>

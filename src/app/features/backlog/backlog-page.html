@@ -1,0 +1,126 @@
+@if (project(); as project) {
+  <app-page-header title="Бэклог">
+    <div actions class="flex items-center gap-1">
+      <a class="btn-ghost hidden sm:inline-flex" [routerLink]="['/p', project.key, 'board']">
+        <app-icon name="board" [size]="18" /> Доска
+      </a>
+      <button type="button" class="btn-secondary" (click)="createSprint()">
+        <app-icon name="plus" [size]="18" /> Спринт
+      </button>
+    </div>
+
+    <div class="mx-auto max-w-5xl px-4 lg:px-8">
+      <div class="-mt-2 mb-1"><app-project-switcher [project]="project" page="backlog" /></div>
+      <div class="no-scrollbar -mx-4 flex items-center gap-2 overflow-x-auto px-4 pt-2 pb-3">
+        <label class="relative shrink-0">
+          <span class="sr-only">Поиск по бэклогу</span>
+          <app-icon name="search" [size]="16" class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
+          <input class="input h-9 w-40 pl-9 sm:w-56" type="search" placeholder="Поиск" [value]="query()" (input)="query.set($any($event.target).value)" />
+        </label>
+        @for (epic of epics(); track epic.id) {
+          <button
+            type="button"
+            class="chip h-8 shrink-0 border px-3"
+            [class]="epicFilter() === epic.id
+              ? 'border-violet-500 bg-violet-50 text-violet-700 dark:bg-violet-950 dark:text-violet-300'
+              : 'border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300'"
+            (click)="epicFilter.set(epicFilter() === epic.id ? null : epic.id)"
+          >
+            <app-icon name="bolt" [size]="12" class="text-violet-500" />
+            {{ epic.title }}
+          </button>
+        }
+      </div>
+    </div>
+  </app-page-header>
+
+  <div cdkDropListGroup class="mx-auto max-w-5xl space-y-4 px-4 py-3 lg:px-8">
+    @for (section of sections(); track section.id) {
+      <section class="card overflow-hidden">
+        <header class="flex items-center gap-2 px-3 py-2.5 sm:px-4">
+          <button type="button" class="btn-icon -ml-1 size-8" [attr.aria-expanded]="!collapsed().has(section.id)" aria-label="Свернуть" (click)="toggle(section.id)">
+            <app-icon [name]="collapsed().has(section.id) ? 'chevron-right' : 'chevron-down'" [size]="18" />
+          </button>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2">
+              <h2 class="line-clamp-2 font-semibold break-words">{{ section.sprint?.name ?? 'Бэклог' }}</h2>
+              @if (section.sprint?.state === 'active') {
+                <span class="chip h-5 bg-emerald-100 text-[11px] text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">Активный</span>
+              }
+            </div>
+            <p class="text-xs text-slate-500">
+              {{ section.issues.length }} задач · {{ section.points }} SP
+              @if (section.sprint?.startDate && section.sprint?.endDate) {
+                · {{ formatDate(section.sprint!.startDate!) }} – {{ formatDate(section.sprint!.endDate!) }}
+              }
+              @if (section.sprint?.goal) {
+                · {{ section.sprint!.goal }}
+              }
+            </p>
+          </div>
+
+          @if (section.sprint; as sprint) {
+            @if (sprint.state === 'active') {
+              <button type="button" class="btn-secondary h-8 px-3" (click)="completeSprint(sprint)">Завершить</button>
+            } @else {
+              <button type="button" class="btn-secondary h-8 px-3" [disabled]="!section.issues.length" (click)="startSprint(sprint)">
+                <app-icon name="play" [size]="14" /> <span class="hidden sm:inline">Начать</span>
+              </button>
+            }
+            <button type="button" class="btn-icon size-8" aria-label="Действия со спринтом" [cdkMenuTriggerFor]="sprintMenu">
+              <app-icon name="more" [size]="18" [strokeWidth]="3" />
+            </button>
+            <ng-template #sprintMenu>
+              <div cdkMenu class="menu">
+                <button cdkMenuItem class="menu-item" (cdkMenuItemTriggered)="editSprint(sprint)">
+                  <app-icon name="pencil" [size]="16" /> Изменить
+                </button>
+                <button cdkMenuItem class="menu-item text-rose-600!" (cdkMenuItemTriggered)="removeSprint(sprint)">
+                  <app-icon name="trash" [size]="16" /> Удалить
+                </button>
+              </div>
+            </ng-template>
+          }
+        </header>
+
+        @if (!collapsed().has(section.id)) {
+          <div
+            cdkDropList
+            [cdkDropListData]="section"
+            (cdkDropListDropped)="drop($event)"
+            class="min-h-12 divide-y divide-slate-100 border-t border-slate-100 dark:divide-slate-800 dark:border-slate-800"
+          >
+            @for (issue of section.issues; track issue.id) {
+              <app-issue-row
+                cdkDrag
+                [cdkDragData]="issue"
+                [cdkDragStartDelay]="{ touch: 250, mouse: 0 }"
+                (cdkDragStarted)="dragGuard.started()"
+                class="bg-white dark:bg-slate-900"
+                [issue]="issue"
+              />
+            } @empty {
+              <p class="px-4 py-4 text-center text-sm text-slate-400">
+                {{ section.sprint ? 'Перетащите задачи из бэклога, чтобы спланировать спринт' : 'Бэклог пуст' }}
+              </p>
+            }
+          </div>
+          <div class="flex items-center gap-2 border-t border-slate-100 px-3 sm:px-4 dark:border-slate-800">
+            <app-icon name="plus" [size]="16" class="text-slate-400" />
+            <input
+              #quick
+              class="h-11 flex-1 bg-transparent text-base outline-none placeholder:text-slate-400 sm:text-sm"
+              placeholder="Быстро добавить задачу и нажать Enter"
+              enterkeyhint="done"
+              (keydown.enter)="quickCreate(section, quick)"
+            />
+          </div>
+        }
+      </section>
+    }
+  </div>
+} @else {
+  <app-empty-state icon="folder" title="Проект не найден" text="Возможно, он был удалён.">
+    <a routerLink="/projects" class="btn-primary">К списку проектов</a>
+  </app-empty-state>
+}

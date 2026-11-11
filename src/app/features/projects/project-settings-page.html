@@ -1,0 +1,92 @@
+@if (project(); as project) {
+  <app-page-header title="Настройки проекта">
+    <div class="mx-auto max-w-3xl px-4 pb-2 lg:px-8">
+      <div class="-mt-2"><app-project-switcher [project]="project" page="settings" /></div>
+    </div>
+  </app-page-header>
+
+  <div class="mx-auto max-w-3xl space-y-6 px-4 py-3 lg:px-8">
+    <!-- Основное -->
+    <section class="card flex items-center gap-4 p-4">
+      <span class="flex size-12 shrink-0 items-center justify-center rounded-2xl text-base font-bold text-white" [class]="colors[project.color].solid">
+        {{ project.key.slice(0, 2) }}
+      </span>
+      <div class="min-w-0 flex-1">
+        <p class="truncate font-semibold">{{ project.name }}</p>
+        <p class="font-mono text-xs text-slate-500">{{ project.key }}</p>
+        @if (project.description) {
+          <p class="mt-1 line-clamp-2 text-sm text-slate-500">{{ project.description }}</p>
+        }
+      </div>
+      <button type="button" class="btn-secondary h-9" (click)="edit()">
+        <app-icon name="pencil" [size]="16" /> Изменить
+      </button>
+    </section>
+
+    <!-- Рабочий процесс -->
+    <section>
+      <h2 class="section-title">Статусы и колонки доски</h2>
+      <div class="card overflow-hidden">
+        <p class="px-4 pt-4 text-sm text-slate-500">
+          Порядок статусов — это порядок колонок на доске. Категория определяет цвет и считается ли задача завершённой.
+        </p>
+        <ol cdkDropList (cdkDropListDropped)="reorder($event)" class="mt-3 divide-y divide-slate-100 border-t border-slate-100 dark:divide-slate-800 dark:border-slate-800">
+          @for (status of statuses(); track status.id; let i = $index) {
+            <li cdkDrag class="flex items-center gap-2 bg-white px-2 py-2 sm:px-3 dark:bg-slate-900">
+              <button type="button" cdkDragHandle class="btn-icon size-9 cursor-grab touch-none" aria-label="Перетащить">
+                <app-icon name="grip" [size]="18" [strokeWidth]="3" />
+              </button>
+              <span class="size-2.5 shrink-0 rounded-full" [class]="categoryInfo[status.category].dot"></span>
+              <input
+                class="input h-9 min-w-0 flex-1"
+                aria-label="Название статуса"
+                [value]="status.name"
+                (input)="patchStatus(i, { name: $any($event.target).value })"
+              />
+              <select class="input h-9 w-auto shrink-0" aria-label="Категория" (change)="patchStatus(i, { category: $any($event.target).value })">
+                @for (c of categoryList; track c) {
+                  <option [value]="c" [selected]="status.category === c">{{ categoryInfo[c].label }}</option>
+                }
+              </select>
+              <button
+                type="button"
+                class="btn-icon size-9 hover:text-rose-600"
+                aria-label="Удалить статус"
+                [disabled]="statuses().length <= 1"
+                [title]="counts().get(status.id) ? 'Задачи из этого статуса будут перенесены в первый статус' : ''"
+                (click)="removeStatus(i)"
+              >
+                <app-icon name="trash" [size]="16" />
+              </button>
+            </li>
+          }
+        </ol>
+        <div class="flex flex-wrap items-center gap-2 border-t border-slate-100 p-3 dark:border-slate-800">
+          <button type="button" class="btn-ghost h-9" (click)="addStatus()">
+            <app-icon name="plus" [size]="16" /> Добавить статус
+          </button>
+          @if (dirty()) {
+            <button type="button" class="btn-ghost ml-auto h-9" (click)="statuses.set(project.statuses)">Отменить</button>
+            <button type="button" class="btn-primary h-9" (click)="saveStatuses()">Сохранить</button>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Опасная зона -->
+    <section>
+      <h2 class="section-title">Опасная зона</h2>
+      <div class="card flex flex-wrap items-center gap-3 border-rose-200 p-4 dark:border-rose-900">
+        <div class="flex-1 text-sm">
+          <p class="font-medium">Удалить проект</p>
+          <p class="text-slate-500">Вместе со всеми задачами и спринтами.</p>
+        </div>
+        <button type="button" class="btn-danger h-9" (click)="remove()">Удалить</button>
+      </div>
+    </section>
+  </div>
+} @else {
+  <app-empty-state icon="folder" title="Проект не найден">
+    <a routerLink="/projects" class="btn-primary">К списку проектов</a>
+  </app-empty-state>
+}
