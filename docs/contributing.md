@@ -35,7 +35,7 @@
 - **`inject()`** вместо внедрения через конструктор.
 - Имена файлов по стилю Angular 2025: `board-page.ts`, класс `BoardPage` (без суффикса `.component`).
 - Комментарии — на русском, объясняют **зачем**, а не **что**.
-- Тексты интерфейса — на русском. Подписи типов, приоритетов и полей — в `core/models/catalog.ts`.
+- Тексты интерфейса — только через словари `core/i18n/ru.ts` и `en.ts` (см. рецепт ниже).
 - Компонент **не меняет** данные сам — только через сервисы из `core/services`.
 
 ## Рецепты
@@ -51,11 +51,11 @@
    ```
 2. **Создание.** В `IssueService.create` (и `IssueInput`) задайте значение по умолчанию: `environment: input.environment ?? null`.
 3. **Старые данные.** У задач, созданных раньше, поля нет — читайте его как `issue.environment ?? null`.
-4. **История.** Чтобы изменения попадали в историю, добавьте подпись в `FIELD_LABELS` (`catalog.ts`): `environment: 'Окружение'`.
+4. **История.** Чтобы изменения попадали в историю, добавьте поле в `TRACKED_FIELDS` (`catalog.ts`) и подпись в словари: `'field.environment': 'Окружение'` в `ru.ts` и `'Environment'` в `en.ts`.
 5. **Интерфейс.** На странице задачи (`features/issues/issue-detail-page.html`) добавьте строку в блок `<dl>`:
    ```html
    <div class="field-row">
-     <dt>Окружение</dt>
+     <dt>{{ 'field.environment' | t }}</dt>
      <dd>
        <input class="field-select" [value]="issue.environment ?? ''"
               (change)="save({ environment: $any($event.target).value || null })" />
@@ -79,12 +79,28 @@
 Откройте `shared/ui/icon.ts` и добавьте строку в `ICONS`: имя и SVG-путь для области 24×24
 (пути удобно брать с [lucide.dev](https://lucide.dev), атрибут `d` у `<path>`). Использование: `<app-icon name="имя" />`.
 
+### Рецепт: добавить или изменить текст интерфейса
+
+1. Добавьте ключ в `core/i18n/ru.ts`, например `'board.archive': 'В архив'`.
+2. Добавьте тот же ключ в `core/i18n/en.ts`: `'board.archive': 'Archive'`. Без этого проект не соберётся.
+3. Используйте: в шаблоне `{{ 'board.archive' | t }}` (добавьте `TranslatePipe` в `imports`), в коде `this.i18n.t('board.archive')`.
+
+Никогда не пишите видимый пользователю текст прямо в шаблоне — только через словарь.
+
+### Рецепт: добавить язык
+
+1. Добавьте код в тип `Lang` и в массив `LANGUAGES` (`core/i18n/lang.ts`), например `{ code: 'de', label: 'Deutsch', locale: 'de-DE' }`.
+2. Создайте `core/i18n/de.ts` по образцу `en.ts` (тип `Record<TKey, Entry>`) и подключите его в `DICTIONARIES` в `i18n.service.ts`.
+3. Добавьте фразу «только что» в `JUST_NOW` (`core/utils/dates.ts`) и демо-тексты в `CONTENT` (`demo-data.service.ts`).
+4. При необходимости поправьте `detectLang()` — язык по умолчанию по языку браузера.
+5. Тест `i18n.spec.ts` проверяет, что в словарях одинаковые ключи — расширьте его на новый язык.
+
 ### Рецепт: добавить новую коллекцию данных
 
 1. Опишите тип в `entities.ts`, добавьте его в `CollectionMap`, `COLLECTIONS` и `emptySnapshot()`.
 2. Увеличьте `DB_VERSION` в `indexeddb-storage.ts` — новый object store создастся в `upgrade` автоматически.
 3. Напишите сервис в `core/services/`, работающий через `DataStore`.
-4. Экспорт/импорт подхватят коллекцию сами (они перебирают `COLLECTIONS`). Добавьте подпись в `COLLECTION_LABELS` в `features/settings/import-dialog.ts`.
+4. Экспорт/импорт подхватят коллекцию сами (они перебирают `COLLECTIONS`). Добавьте подписи `import.collection.<имя>` в оба словаря.
 
 ### Рецепт: поменять акцентный цвет
 

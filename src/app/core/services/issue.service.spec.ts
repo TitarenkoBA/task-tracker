@@ -56,8 +56,9 @@ describe('IssueService', () => {
       to: 'В работе',
     });
     expect(log.find((a) => a.field === 'priority')).toMatchObject({
-      from: 'Средний',
-      to: 'Высокий',
+      // Приоритет хранится кодом и переводится при показе (I18n.historyValue).
+      from: 'medium',
+      to: 'high',
     });
   });
 

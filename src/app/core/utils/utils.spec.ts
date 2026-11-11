@@ -1,3 +1,4 @@
+import { currentLang } from '../i18n/lang';
 import { dueState, formatRelative, todayIso } from './dates';
 import { ORDER_STEP, byOrder, orderBetween } from './order';
 
@@ -18,6 +19,9 @@ describe('orderBetween', () => {
 });
 
 describe('даты', () => {
+  // Язык — глобальный сигнал; другие тесты могли переключить его на английский.
+  beforeEach(() => currentLang.set('ru'));
+
   it('todayIso возвращает местную дату', () => {
     expect(todayIso(new Date(2026, 10, 11, 23, 30))).toBe('2026-11-11');
   });

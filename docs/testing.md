@@ -26,6 +26,9 @@ npm run test:ci   # один прогон (для CI и перед коммит�
 | `core/services/export-import.service.spec.ts` | Проверка файла, перенос между «устройствами», слияние, удаление, замена |
 | `core/utils/utils.spec.ts` | Дробный порядок, даты и сроки |
 | `features/issues/issue-filter.spec.ts` | Поиск, фильтры и сортировка |
+| `core/i18n/i18n.spec.ts` | Полнота словарей, подстановки, множественное число, смена языка, даты |
+| `core/utils/markdown.spec.ts` | Рендер Markdown и защита от HTML/опасных ссылок |
+| `shared/ui/markdown-editor.spec.ts` | Кнопки форматирования, предпросмотр, Ctrl+Enter |
 | `app.spec.ts` | Оболочка: навигация, ссылки в текущий проект, горячие клавиши |
 | `features/board/board-page.spec.ts` | Колонки, фильтр, реактивность доски |
 | `features/issues/issue-create-dialog.spec.ts` | Валидация и создание задачи |
@@ -78,6 +81,7 @@ it('показывает колонки', async () => {
 - Ищите элементы так, как их видит пользователь: по тексту, `aria-label`, `id` полей.
 - После изменения поля (`input.dispatchEvent(new Event('input'))`) вызывайте `await fixture.whenStable()`.
 - Для демо-данных используйте `TestBed.inject(DemoDataService).create()`.
+- Тесты по умолчанию идут на русском. Другой язык: `setupTestStore({ lang: 'en' })` или `TestBed.inject(I18n).set('en')`.
 - Компонентам, которые используют `PwaService` (оболочка), нужен `provideServiceWorker('ngsw-worker.js', { enabled: false })`.
 
 ## Ручная проверка перед релизом

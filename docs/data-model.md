@@ -45,7 +45,7 @@ erDiagram
 | `projectId` | Проект |
 | `number` | Номер в проекте. Ключ задачи = `${project.key}-${number}` |
 | `type` | `epic`, `story`, `task`, `bug`, `subtask` |
-| `title`, `description` | Название (обязательно) и описание (простой текст) |
+| `title`, `description` | Название (обязательно) и описание (Markdown) |
 | `statusId` | `id` статуса из `project.statuses` |
 | `priority` | `highest`, `high`, `medium`, `low`, `lowest` |
 | `assigneeId`, `reporterId` | Исполнитель и автор (`people`) или `null` |
@@ -72,13 +72,14 @@ erDiagram
 
 ### `comments` — комментарии
 
-`issueId`, `authorId`, `body` (простой текст).
+`issueId`, `authorId`, `body` (Markdown).
 
 ### `activity` — история изменений
 
 Записи только добавляются. `issueId`, `actorId`, `kind` (`created` / `changed` / `commented`),
 `field` (имя поля задачи), `from`, `to` — **человекочитаемые** значения на момент изменения
 (например, имя статуса, а не его id), чтобы история оставалась понятной после удаления статуса или человека.
+Исключение — `priority` и `type`: они хранятся кодом (`high`, `bug`) и переводятся на язык интерфейса при показе.
 
 ## Порядок (`order`)
 
