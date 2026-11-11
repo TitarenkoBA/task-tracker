@@ -60,7 +60,8 @@ docs/                     Документация
 npm run build
 ```
 
-Готовый сайт появится в `dist/task-tracker/browser`. Это обычные статические файлы — их можно выложить
+Готовый сайт появится в `dist/task-tracker/browser`. На GitHub Pages публикация уже автоматизирована —
+см. [deployment.md](deployment.md). Это обычные статические файлы — их можно выложить
 на любой хостинг: GitHub Pages, Netlify, Vercel, Cloudflare Pages, свой nginx.
 
 Важно для хостинга:

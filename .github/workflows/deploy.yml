@@ -1,0 +1,91 @@
+# Автоматическая проверка и публикация на GitHub Pages.
+#
+# - Pull request в main  → форматирование, тесты, сборка (без публикации).
+# - Push в main          → то же самое + публикация на GitHub Pages.
+# - Вручную              → вкладка Actions → «Deploy to GitHub Pages» → Run workflow.
+#
+# Подробности и первая настройка: docs/deployment.md
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Права только на то, что нужно для публикации на Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Одна публикация за раз; новая отменяет зависшую предыдущую.
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Test and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Unit tests
+        run: npm run test:ci
+
+      # Сайт открывается по адресу https://<user>.github.io/<repo>/, поэтому
+      # приложению нужен base href "/<repo>/". Для репозитория <user>.github.io
+      # или своего домена — "/". Можно переопределить переменной репозитория BASE_HREF
+      # (Settings → Secrets and variables → Actions → Variables).
+      - name: Compute base href
+        id: base
+        run: |
+          if [ -n "${{ vars.BASE_HREF }}" ]; then
+            echo "href=${{ vars.BASE_HREF }}" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.event.repository.name }}" == *.github.io ]]; then
+            echo "href=/" >> "$GITHUB_OUTPUT"
+          else
+            echo "href=/${{ github.event.repository.name }}/" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build
+        run: npx ng build --base-href "${{ steps.base.outputs.href }}"
+
+      # GitHub Pages не умеет отдавать index.html для любых адресов (SPA fallback).
+      # Копия под именем 404.html решает это: прямые ссылки вида /browse/WEB-1 работают.
+      # .nojekyll — чтобы Pages не обрабатывал файлы через Jekyll.
+      - name: Prepare for GitHub Pages
+        run: |
+          cp dist/task-tracker/browser/index.html dist/task-tracker/browser/404.html
+          touch dist/task-tracker/browser/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
+        with:
+          path: dist/task-tracker/browser
+
+  deploy:
+    name: Deploy
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
