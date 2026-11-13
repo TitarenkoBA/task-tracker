@@ -37,7 +37,8 @@ export interface MoveTarget {
   sprintId?: EntityId | null;
 }
 
-const ISSUE_KEY_PATTERN = /^([A-Za-z][A-Za-z0-9]{1,9})-(\d+)$/;
+/** `WEB-12` или `WEB~a1b2c3-12` (см. ProjectService.routeKey). */
+const ISSUE_KEY_PATTERN = /^([A-Za-z][A-Za-z0-9]{1,9}(?:~[0-9a-fA-F]{1,32})?)-(\d+)$/;
 
 /** Бизнес-логика задач: создание, изменение, перемещение, комментарии, история. */
 @Injectable({ providedIn: 'root' })
@@ -59,6 +60,12 @@ export class IssueService {
   /** Ключ задачи, например `WEB-12`. */
   key(issue: Issue): string {
     return `${this.projects.get(issue.projectId)?.key ?? '?'}-${issue.number}`;
+  }
+
+  /** Ключ задачи для адреса страницы: однозначный, даже если у двух проектов одинаковые ключи. */
+  routeKey(issue: Issue): string {
+    const project = this.projects.get(issue.projectId);
+    return `${project ? this.projects.routeKey(project) : '?'}-${issue.number}`;
   }
 
   byKey(key: string): Issue | undefined {
@@ -157,6 +164,31 @@ export class IssueService {
   move(id: EntityId, target: MoveTarget, list: Issue[], index: number): void {
     const order = orderBetween(list[index - 1]?.order, list[index]?.order);
     this.update(id, { ...target, order });
+  }
+
+  /**
+   * Разрешить одинаковые номера задач в проекте. Они появляются, когда два устройства
+   * одновременно (или офлайн) создали задачу. Все участники выбирают «победителя»
+   * одинаково — более раннюю задачу (при равенстве — с меньшим id), — а остальным
+   * выдают новые номера.
+   * @returns сколько задач перенумеровано
+   */
+  resolveNumberConflicts(projectId: EntityId): number {
+    const byNumber = new Map<number, Issue[]>();
+    for (const issue of this.issues()) {
+      if (issue.projectId !== projectId) continue;
+      byNumber.set(issue.number, [...(byNumber.get(issue.number) ?? []), issue]);
+    }
+    let renumbered = 0;
+    for (const group of byNumber.values()) {
+      if (group.length < 2) continue;
+      group.sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id));
+      for (const issue of group.slice(1)) {
+        this.store.update('issues', issue.id, { number: this.projects.nextIssueNumber(projectId) });
+        renumbered++;
+      }
+    }
+    return renumbered;
   }
 
   /** Удалить задачу. Подзадачи удаляются, у задач эпика просто снимается связь. */

@@ -19,7 +19,7 @@ import { I18n } from './core/i18n/i18n.service';
 import { I18nTitleStrategy } from './core/i18n/title-strategy';
 import { PeopleService } from './core/services/people.service';
 import { ThemeService } from './core/services/theme.service';
-import { SyncService } from './core/sync/sync.service';
+import { CollaborationService } from './core/p2p/collaboration.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -41,12 +41,13 @@ export const appConfig: ApplicationConfig = {
       inject(I18n);
       const store = inject(DataStore);
       const people = inject(PeopleService);
-      inject(SyncService);
+      const collaboration = inject(CollaborationService);
       await store.init();
       people.ensureMe();
+      // Продолжить совместную работу, если она шла до перезапуска (в фоне, не блокируя запуск).
+      collaboration.resume();
     }),
     { provide: TitleStrategy, useClass: I18nTitleStrategy },
-    // Точка расширения для P2P: здесь будет подмена транспорта, например
-    // { provide: SYNC_TRANSPORT, useClass: WebRtcSyncTransport }
+    // Свой signaling-сервер для P2P: { provide: P2P_CONFIG, useValue: { ...DEFAULT_P2P_CONFIG, host: '…' } }
   ],
 };

@@ -38,9 +38,22 @@ export class ProjectService {
     return this.store.get('projects', id);
   }
 
+  /**
+   * Найти проект по ключу из адреса. Обычно это просто ключ (`WEB`), а если у двух
+   * проектов ключи совпали (например, после совместной работы), — `WEB~a1b2c3`, см. {@link routeKey}.
+   */
   byKey(key: string): Project | undefined {
-    const upper = key.toUpperCase();
-    return this.projects().find((p) => p.key === upper);
+    const [rawKey, idPrefix] = key.split('~');
+    const upper = rawKey.toUpperCase();
+    const matches = this.projects().filter((p) => p.key === upper);
+    if (idPrefix) return matches.find((p) => p.id.startsWith(idPrefix.toLowerCase()));
+    return matches[0];
+  }
+
+  /** Ключ проекта для адреса страницы: однозначный, даже если у двух проектов одинаковые ключи. */
+  routeKey(project: Project): string {
+    const duplicate = this.projects().some((p) => p.key === project.key && p.id !== project.id);
+    return duplicate ? `${project.key}~${project.id.replace(/-/g, '').slice(0, 6)}` : project.key;
   }
 
   /** Предложить ключ по названию: «Мобильное приложение» → «MP». */
@@ -51,7 +64,8 @@ export class ProjectService {
     key = key.replace(/^[0-9]+/, '').slice(0, 10);
     if (key.length < 2) key = (key + 'PRJ').slice(0, 3);
     let candidate = key;
-    for (let i = 2; this.byKey(candidate); i++) candidate = `${key.slice(0, 8)}${i}`;
+    for (let i = 2; this.projects().some((p) => p.key === candidate); i++)
+      candidate = `${key.slice(0, 8)}${i}`;
     return candidate;
   }
 
@@ -60,8 +74,8 @@ export class ProjectService {
     if (!PROJECT_KEY_PATTERN.test(key)) {
       return this.i18n.t('error.keyFormat');
     }
-    const existing = this.byKey(key);
-    if (existing && existing.id !== exceptId) return this.i18n.t('error.keyTaken');
+    const existing = this.projects().find((p) => p.key === key && p.id !== exceptId);
+    if (existing) return this.i18n.t('error.keyTaken');
     return null;
   }
 
@@ -98,11 +112,19 @@ export class ProjectService {
     this.store.update('projects', id, { statuses });
   }
 
-  /** Выдать следующий номер задачи в проекте. */
+  /**
+   * Выдать следующий номер задачи в проекте. Учитывает и счётчик, и реальные номера:
+   * после синхронизации счётчик с другого устройства может отставать.
+   */
   nextIssueNumber(id: EntityId): number {
     const project = this.get(id);
     if (!project) throw new Error(this.i18n.t('error.projectNotFound'));
-    const number = project.issueCounter + 1;
+    let max = project.issueCounter;
+    for (const issue of this.store.raw.all('issues')) {
+      const i = issue as unknown as { projectId: EntityId; number: number };
+      if (i.projectId === id && i.number > max) max = i.number;
+    }
+    const number = max + 1;
     this.store.update('projects', id, { issueCounter: number });
     return number;
   }
@@ -114,6 +136,9 @@ export class ProjectService {
     }
     for (const sprint of this.store.list('sprints')()) {
       if (sprint.projectId === id) this.store.remove('sprints', sprint.id);
+    }
+    for (const message of this.store.list('messages')()) {
+      if (message.projectId === id) this.store.remove('messages', message.id);
     }
     this.store.remove('projects', id);
   }
