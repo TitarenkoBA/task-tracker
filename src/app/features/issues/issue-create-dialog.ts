@@ -110,7 +110,7 @@ export class IssueCreateDialog {
         kind: 'success',
         action: {
           label: this.i18n.t('common.open'),
-          run: () => void this.router.navigate(['/browse', key]),
+          run: () => void this.router.navigate(['/browse', this.issues.routeKey(issue)]),
         },
       });
       if (this.createAnother()) {

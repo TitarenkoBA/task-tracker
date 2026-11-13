@@ -56,31 +56,53 @@
     @for (project of projects.projects(); track project.id) {
       <div>
         <a
-          [routerLink]="['/p', project.key, 'board']"
+          [routerLink]="['/p', projects.routeKey(project), 'board']"
           class="nav-link"
           [class.font-semibold]="projects.current()?.id === project.id"
         >
           <span class="size-2.5 rounded-full" [class]="colors[project.color].solid"></span>
           <span class="truncate">{{ project.name }}</span>
+          @if (collab.projectId() === project.id) {
+            <span
+              class="ml-auto size-2 shrink-0 rounded-full"
+              [class]="
+                collab.status() === 'online' ? 'bg-emerald-500' : 'animate-pulse bg-amber-400'
+              "
+              [title]="'collab.title' | t"
+            ></span>
+          }
         </a>
         @if (projects.current()?.id === project.id) {
           <div class="ml-5 space-y-0.5 border-l border-slate-200 pl-2 dark:border-slate-800">
             <a
-              [routerLink]="['/p', project.key, 'board']"
+              [routerLink]="['/p', projects.routeKey(project), 'board']"
               routerLinkActive="nav-active"
               class="nav-link h-8"
             >
               <app-icon name="board" [size]="16" /> {{ 'common.board' | t }}
             </a>
             <a
-              [routerLink]="['/p', project.key, 'backlog']"
+              [routerLink]="['/p', projects.routeKey(project), 'backlog']"
               routerLinkActive="nav-active"
               class="nav-link h-8"
             >
               <app-icon name="layers" [size]="16" /> {{ 'common.backlog' | t }}
             </a>
             <a
-              [routerLink]="['/p', project.key, 'settings']"
+              [routerLink]="['/p', projects.routeKey(project), 'chat']"
+              routerLinkActive="nav-active"
+              class="nav-link h-8"
+            >
+              <app-icon name="message" [size]="16" /> {{ 'nav.chat' | t }}
+              @if (chat.unread(project.id); as unread) {
+                <span
+                  class="ml-auto rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white"
+                  >{{ unread }}</span
+                >
+              }
+            </a>
+            <a
+              [routerLink]="['/p', projects.routeKey(project), 'settings']"
               routerLinkActive="nav-active"
               class="nav-link h-8"
             >
@@ -111,15 +133,17 @@
   <router-outlet />
 </main>
 
-<!-- Плавающая кнопка «создать» (телефон) -->
-<button
-  type="button"
-  class="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-30 flex size-14 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-lg shadow-brand-600/30 transition active:scale-95 lg:hidden"
-  [attr.aria-label]="'common.createIssue' | t"
-  (click)="actions.createIssue()"
->
-  <app-icon name="plus" [size]="26" />
-</button>
+<!-- Плавающая кнопка «создать» (телефон). На странице чата не нужна — там поле ввода. -->
+@if (!isChat()) {
+  <button
+    type="button"
+    class="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-30 flex size-14 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-lg shadow-brand-600/30 transition active:scale-95 lg:hidden"
+    [attr.aria-label]="'common.createIssue' | t"
+    (click)="actions.createIssue()"
+  >
+    <app-icon name="plus" [size]="26" />
+  </button>
+}
 
 <!-- Нижняя навигация (телефон) -->
 <nav

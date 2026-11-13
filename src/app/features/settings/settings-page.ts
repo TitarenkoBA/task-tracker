@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { DataStore } from '../../core/data/data-store';
 import { I18n, TranslatePipe } from '../../core/i18n/i18n.service';
 import { LANGUAGES, Lang } from '../../core/i18n/lang';
@@ -10,7 +11,8 @@ import { PwaService } from '../../core/services/pwa.service';
 import { ThemePreference } from '../../core/services/settings.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { ToastService } from '../../core/services/toast.service';
-import { SyncService } from '../../core/sync/sync.service';
+import { CollaborationService } from '../../core/p2p/collaboration.service';
+import { ProjectService } from '../../core/services/project.service';
 import { DialogService } from '../../shared/dialog/dialog.service';
 import { Avatar } from '../../shared/ui/avatar';
 import { Icon } from '../../shared/ui/icon';
@@ -19,7 +21,7 @@ import { ImportDialog } from './import-dialog';
 
 @Component({
   selector: 'app-settings-page',
-  imports: [PageHeader, Avatar, Icon, TranslatePipe],
+  imports: [PageHeader, Avatar, Icon, TranslatePipe, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './settings-page.html',
 })
@@ -27,7 +29,11 @@ export class SettingsPage {
   protected readonly people = inject(PeopleService);
   protected readonly theme = inject(ThemeService);
   protected readonly pwa = inject(PwaService);
-  protected readonly sync = inject(SyncService);
+  protected readonly collab = inject(CollaborationService);
+  protected readonly projects = inject(ProjectService);
+  /** Проект, над которым идёт совместная работа. */
+  protected readonly sharedProject = computed(() => this.projects.get(this.collab.projectId()));
+  protected readonly collabStatus = computed(() => `collab.status.${this.collab.status()}` as TKey);
   protected readonly i18n = inject(I18n);
   private readonly store = inject(DataStore);
   private readonly exporter = inject(ExportImportService);

@@ -17,7 +17,7 @@ import { PriorityIcon, TypeIcon } from '../../shared/ui/issue-badges';
   host: { class: 'block' },
   template: `
     <a
-      [routerLink]="['/browse', key()]"
+      [routerLink]="['/browse', routeKey()]"
       class="block rounded-xl border border-slate-200/80 bg-white p-3 shadow-xs transition hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
       [class.opacity-70]="done()"
     >
@@ -94,6 +94,7 @@ export class IssueCard {
   private readonly people = inject(PeopleService);
 
   protected readonly key = computed(() => this.issues.key(this.issue()));
+  protected readonly routeKey = computed(() => this.issues.routeKey(this.issue()));
   protected readonly done = computed(() => this.issues.isDone(this.issue()));
   protected readonly assignee = computed(() => this.people.get(this.issue().assigneeId));
   protected readonly epic = computed(() => {

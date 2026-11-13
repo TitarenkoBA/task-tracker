@@ -28,7 +28,7 @@ import { ActionsService } from '../actions.service';
         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           @for (card of cards(); track card.project.id) {
             <a
-              [routerLink]="['/p', card.project.key, 'board']"
+              [routerLink]="['/p', projects.routeKey(card.project), 'board']"
               class="card group flex flex-col p-4 transition hover:-translate-y-0.5 hover:shadow-md"
             >
               <div class="flex items-center gap-3">
@@ -86,7 +86,7 @@ import { ActionsService } from '../actions.service';
 })
 export class ProjectsPage {
   protected readonly actions = inject(ActionsService);
-  private readonly projects = inject(ProjectService);
+  protected readonly projects = inject(ProjectService);
   private readonly issues = inject(IssueService);
   private readonly demo = inject(DemoDataService);
   private readonly router = inject(Router);
@@ -113,6 +113,6 @@ export class ProjectsPage {
 
   protected createDemo(): void {
     const project = this.demo.create();
-    void this.router.navigate(['/p', project.key, 'board']);
+    void this.router.navigate(['/p', this.projects.routeKey(project), 'board']);
   }
 }

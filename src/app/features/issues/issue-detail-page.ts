@@ -48,7 +48,7 @@ export class IssueDetailPage {
   readonly issueKey = input.required<string>();
 
   private readonly issues = inject(IssueService);
-  private readonly projects = inject(ProjectService);
+  protected readonly projects = inject(ProjectService);
   private readonly sprints = inject(SprintService);
   private readonly dialogs = inject(DialogService);
   private readonly toasts = inject(ToastService);
@@ -195,6 +195,10 @@ export class IssueDetailPage {
     return this.issues.isDone(issue);
   }
 
+  protected childRouteKey(issue: Issue): string {
+    return this.issues.routeKey(issue);
+  }
+
   protected childKey(issue: Issue): string {
     return this.issues.key(issue);
   }
@@ -276,6 +280,6 @@ export class IssueDetailPage {
     const key = this.key();
     this.issues.remove(issue.id);
     this.toasts.success(this.i18n.t('issue.removed', { key }));
-    void this.router.navigate(project ? ['/p', project.key, 'board'] : ['/']);
+    void this.router.navigate(project ? ['/p', this.projects.routeKey(project), 'board'] : ['/']);
   }
 }

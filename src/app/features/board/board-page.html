@@ -1,7 +1,11 @@
 @if (project(); as project) {
   <app-page-header [title]="sprint()?.name ?? ('common.board' | t)">
     <div actions class="flex items-center gap-1">
-      <a class="btn-ghost hidden sm:inline-flex" [routerLink]="['/p', project.key, 'backlog']">
+      <app-collab-button [project]="project" />
+      <a
+        class="btn-ghost hidden sm:inline-flex"
+        [routerLink]="['/p', projects.routeKey(project), 'backlog']"
+      >
         <app-icon name="layers" [size]="18" /> {{ 'common.backlog' | t }}
       </a>
     </div>
@@ -167,7 +171,7 @@
       >
         <app-icon name="plus" [size]="18" /> {{ 'common.createIssue' | t }}
       </button>
-      <a class="btn-secondary" [routerLink]="['/p', project.key, 'backlog']">{{
+      <a class="btn-secondary" [routerLink]="['/p', projects.routeKey(project), 'backlog']">{{
         'board.openBacklog' | t
       }}</a>
     </app-empty-state>

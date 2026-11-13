@@ -160,6 +160,6 @@ export class ProjectFormDialog {
     });
     this.toasts.success(this.i18n.t('projectForm.created', { name: project.name }));
     this.ref.close(project);
-    void this.router.navigate(['/p', project.key, 'board']);
+    void this.router.navigate(['/p', this.projects.routeKey(project), 'board']);
   }
 }

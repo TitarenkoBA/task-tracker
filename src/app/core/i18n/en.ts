@@ -338,10 +338,11 @@ export const en: Record<TKey, Entry> = {
   'settings.deleteAllHint': 'Irreversible. Export first.',
   'settings.deleteAllButton': 'Delete…',
   'settings.collab': 'Collaboration',
-  'settings.collabTitle': 'Coming soon: real-time teamwork',
+  'settings.collabTitle': 'Working on projects together',
   'settings.collabText':
-    'Devices will connect directly (P2P), without a server, and see each other’s changes instantly. Status: {status}.',
-  'settings.collabOffline': 'this device only',
+    'Open a project and press “Share” to invite people. Devices connect directly (P2P), no data server needed. Status: {status}.',
+  'settings.collabOffline': 'not connected',
+  'settings.collabProject': 'Project: {name}',
   'settings.deviceId': 'Device ID: {id}',
   'settings.app': 'App',
   'settings.installText':
@@ -395,4 +396,68 @@ export const en: Record<TKey, Entry> = {
   'import.noData': 'The file contains no data',
   'import.badSection': 'Section "{name}" is corrupted',
   'import.badRecord': 'A record in section "{name}" is corrupted',
+  'import.collection.messages': 'Chat messages',
+
+  // Database upgraded in another tab
+  'app.dbOutdated':
+    'The app was updated in another tab. Reload this one so your changes keep saving.',
+  'app.reload': 'Reload',
+
+  // Collaboration (P2P)
+  'nav.chat': 'Chat',
+  'nav.join': 'Invitation',
+  'collab.title': 'Collaboration',
+  'collab.button': 'Share',
+  'collab.intro':
+    'Work on the project together in real time. Devices connect directly (P2P): data travels between browsers, not through a server.',
+  'collab.start': 'Start collaborating',
+  'collab.leave': 'Leave',
+  'collab.leaveHint':
+    'The project stays on this device. Changes from others will arrive when you connect again.',
+  'collab.invite': 'Invite link',
+  'collab.inviteHint':
+    'Anyone with the link can view and edit this project. Only send it to people you trust.',
+  'collab.copy': 'Copy',
+  'collab.share': 'Share',
+  'collab.copied': 'Link copied',
+  'collab.participants': 'People',
+  'collab.you': 'you',
+  'collab.host': 'host',
+  'collab.alone': 'Nobody here yet. Send the invite link.',
+  'collab.status.idle': 'Not connected',
+  'collab.status.connecting': 'Connecting…',
+  'collab.status.online': 'Online',
+  'collab.status.reconnecting': 'Reconnecting…',
+  'collab.status.error': 'Connection error',
+  'collab.onlineCount': { one: '{count} person online', other: '{count} people online' },
+  'collab.otherProject':
+    'You are collaborating on "{name}" right now. Starting here will end that session.',
+  'collab.joined': '{name} is joining the project',
+  'collab.left': '{name} left the project',
+  'collab.signalingLost':
+    'Lost the connection to the discovery server. People already connected keep working.',
+  'collab.yourName': 'Your name for others',
+  'collab.error.badLink': 'Invalid invite link.',
+  'collab.error.noHost': 'Nobody from the project is online right now. Try again later.',
+  'collab.error.room-full': 'The project already has the maximum number of people online (8).',
+  'collab.error.version-mismatch': 'People use different versions of the app. Reload the page.',
+  'collab.error.no-answer': 'Nobody answered. Try again.',
+  'collab.error.host-closed': 'The connection was closed.',
+  'collab.error.not-tracker-room': 'This is not a Task Tracker invitation.',
+  'collab.error.browser': 'This browser does not support P2P connections (WebRTC).',
+  'collab.error.network': 'Cannot reach the server. Retrying…',
+  'collab.error.unknown': 'Could not connect.',
+  'join.title': 'Project invitation',
+  'join.text':
+    'You were invited to work on a project together. Its data will load from another participant’s device and stay with you — it works offline too.',
+  'join.button': 'Join',
+  'join.connecting': 'Connecting to participants…',
+  'join.waiting': 'Receiving the project data…',
+  'join.retry': 'Try again',
+  'chat.placeholder': 'Message everyone…',
+  'chat.send': 'Send',
+  'chat.hint': 'Enter to send · Shift+Enter for a new line',
+  'chat.empty': 'No messages yet. Say hi!',
+  'chat.offline': 'You are offline: messages are saved and will reach others once you connect.',
+  'chat.delete': 'Delete message',
 };

@@ -27,6 +27,7 @@ import { ActionsService } from '../actions.service';
 import { IssueRow } from '../issues/issue-row';
 import { matchesQuery } from '../issues/issue-filter';
 import { ProjectSwitcher } from '../projects/project-switcher';
+import { CollabButton } from '../collab/collab-button';
 import { SprintCompleteDialog, SprintFormDialog } from './sprint-dialogs';
 
 /** Секция бэклога: спринт или сам бэклог (`sprint = null`). */
@@ -54,6 +55,7 @@ interface Section {
     CdkMenuTrigger,
     PageHeader,
     ProjectSwitcher,
+    CollabButton,
     IssueRow,
     Icon,
     EmptyState,
@@ -65,7 +67,7 @@ interface Section {
 export class BacklogPage {
   readonly projectKey = input.required<string>();
 
-  private readonly projects = inject(ProjectService);
+  protected readonly projects = inject(ProjectService);
   private readonly issues = inject(IssueService);
   private readonly sprints = inject(SprintService);
   private readonly dialogs = inject(DialogService);

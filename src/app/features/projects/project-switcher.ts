@@ -46,7 +46,7 @@ import { ActionsService } from '../actions.service';
 export class ProjectSwitcher {
   readonly project = input.required<Project>();
   /** Подстраница, которую открыть в выбранном проекте. */
-  readonly page = input<'board' | 'backlog' | 'settings'>('board');
+  readonly page = input<'board' | 'backlog' | 'settings' | 'chat'>('board');
 
   protected readonly projects = inject(ProjectService);
   protected readonly actions = inject(ActionsService);
@@ -54,6 +54,6 @@ export class ProjectSwitcher {
   protected readonly colors = COLOR_CLASSES;
 
   protected open(project: Project): void {
-    void this.router.navigate(['/p', project.key, this.page()]);
+    void this.router.navigate(['/p', this.projects.routeKey(project), this.page()]);
   }
 }

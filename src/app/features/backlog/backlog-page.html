@@ -1,7 +1,11 @@
 @if (project(); as project) {
   <app-page-header [title]="'common.backlog' | t">
     <div actions class="flex items-center gap-1">
-      <a class="btn-ghost hidden sm:inline-flex" [routerLink]="['/p', project.key, 'board']">
+      <app-collab-button [project]="project" />
+      <a
+        class="btn-ghost hidden sm:inline-flex"
+        [routerLink]="['/p', projects.routeKey(project), 'board']"
+      >
         <app-icon name="board" [size]="18" /> {{ 'common.board' | t }}
       </a>
       <button type="button" class="btn-secondary" (click)="createSprint()">

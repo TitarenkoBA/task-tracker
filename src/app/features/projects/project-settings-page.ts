@@ -27,6 +27,7 @@ import { Icon } from '../../shared/ui/icon';
 import { PageHeader } from '../../shared/ui/page-header';
 import { ProjectFormDialog } from './project-form-dialog';
 import { ProjectSwitcher } from './project-switcher';
+import { CollabButton } from '../collab/collab-button';
 
 /** Настройки проекта: основные данные, статусы (колонки доски), удаление. */
 @Component({
@@ -38,6 +39,7 @@ import { ProjectSwitcher } from './project-switcher';
     CdkDragHandle,
     PageHeader,
     ProjectSwitcher,
+    CollabButton,
     Icon,
     TranslatePipe,
     EmptyState,

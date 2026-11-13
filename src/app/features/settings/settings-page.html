@@ -199,11 +199,17 @@
             'settings.collabText'
               | t
                 : {
-                    status:
-                      sync.status() === 'offline' ? ('settings.collabOffline' | t) : sync.status(),
+                    status: sharedProject() ? (collabStatus() | t) : ('settings.collabOffline' | t),
                   }
           }}
         </p>
+        @if (sharedProject(); as project) {
+          <a
+            class="mt-1 inline-block font-medium text-brand-600 hover:underline dark:text-brand-400"
+            [routerLink]="['/p', projects.routeKey(project), 'board']"
+            >{{ 'settings.collabProject' | t: { name: project.name } }}</a
+          >
+        }
         <p class="mt-1 font-mono text-xs text-slate-400">
           {{ 'settings.deviceId' | t: { id: replicaId } }}
         </p>

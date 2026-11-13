@@ -16,7 +16,7 @@ import { PriorityIcon, StatusBadge, TypeIcon } from '../../shared/ui/issue-badge
   host: { class: 'block' },
   template: `
     <a
-      [routerLink]="['/browse', key()]"
+      [routerLink]="['/browse', routeKey()]"
       class="flex min-h-12 items-center gap-2.5 px-3 py-2 transition hover:bg-slate-50 sm:px-4 dark:hover:bg-slate-800/50"
     >
       <app-type-icon [type]="issue().type" />
@@ -69,6 +69,7 @@ export class IssueRow {
   private readonly people = inject(PeopleService);
 
   protected readonly key = computed(() => this.issues.key(this.issue()));
+  protected readonly routeKey = computed(() => this.issues.routeKey(this.issue()));
   protected readonly status = computed(() => this.issues.status(this.issue()));
   protected readonly done = computed(() => this.status()?.category === 'done');
   protected readonly statusDot = computed(

@@ -28,6 +28,7 @@ import { ActionsService } from '../actions.service';
 import { IssueCard } from '../issues/issue-card';
 import { matchesQuery } from '../issues/issue-filter';
 import { ProjectSwitcher } from '../projects/project-switcher';
+import { CollabButton } from '../collab/collab-button';
 
 interface Column {
   status: WorkflowStatus;
@@ -48,6 +49,7 @@ interface Column {
     CdkScrollable,
     PageHeader,
     ProjectSwitcher,
+    CollabButton,
     IssueCard,
     Avatar,
     Icon,
@@ -61,7 +63,7 @@ export class BoardPage {
   /** Ключ проекта из URL (`/p/:projectKey/board`). */
   readonly projectKey = input.required<string>();
 
-  private readonly projects = inject(ProjectService);
+  protected readonly projects = inject(ProjectService);
   private readonly issues = inject(IssueService);
   private readonly sprints = inject(SprintService);
   protected readonly people = inject(PeopleService);

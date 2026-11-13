@@ -99,6 +99,11 @@ export class DashboardPage {
 
   protected readonly formatRelative = formatRelative;
 
+  protected issueRouteKey(id: string): string {
+    const issue = this.issues.get(id);
+    return issue ? this.issues.routeKey(issue) : '';
+  }
+
   protected issueKey(id: string): string {
     const issue = this.issues.get(id);
     return issue ? this.issues.key(issue) : '';
@@ -124,6 +129,6 @@ export class DashboardPage {
 
   protected createDemo(): void {
     const project = this.demo.create();
-    void this.router.navigate(['/p', project.key, 'board']);
+    void this.router.navigate(['/p', this.projects.routeKey(project), 'board']);
   }
 }

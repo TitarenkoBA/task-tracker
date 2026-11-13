@@ -36,6 +36,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/backlog/backlog-page').then((m) => m.BacklogPage),
       },
       {
+        path: 'chat',
+        title: 'nav.chat',
+        loadComponent: () => import('./features/chat/chat-page').then((m) => m.ChatPage),
+      },
+      {
         path: 'settings',
         title: 'nav.projectSettings',
         loadComponent: () =>
@@ -58,6 +63,12 @@ export const routes: Routes = [
     path: 'settings',
     title: 'nav.settings',
     loadComponent: () => import('./features/settings/settings-page').then((m) => m.SettingsPage),
+  },
+  {
+    // Приглашение к совместной работе: /join/tt-<id проекта>
+    path: 'join/:roomId',
+    title: 'nav.join',
+    loadComponent: () => import('./features/collab/join-page').then((m) => m.JoinPage),
   },
   { path: '**', redirectTo: '' },
 ];
