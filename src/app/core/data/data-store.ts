@@ -95,6 +95,17 @@ export class DataStore {
     return entity && !entity.deleted ? entity : undefined;
   }
 
+  /**
+   * Доступ к данным вместе с удалёнными записями — для синхронизации, где
+   * надгробия тоже нужно передавать. Для интерфейса используйте {@link get} и {@link list}.
+   */
+  readonly raw = {
+    get: (collection: CollectionName, id: EntityId): BaseEntity | undefined =>
+      this.maps[collection]().get(id) as BaseEntity | undefined,
+    all: (collection: CollectionName): Iterable<BaseEntity> =>
+      this.maps[collection]().values() as Iterable<BaseEntity>,
+  };
+
   /** Полный снимок данных, включая удалённые записи. Используется для экспорта. */
   snapshot(): Snapshot {
     const snapshot = emptySnapshot();
@@ -198,7 +209,7 @@ export class DataStore {
   }
 
   /**
-   * Подписка на применённые изменения. Через неё будущий SyncService
+   * Подписка на применённые изменения. Через неё CollaborationService (core/p2p)
    * отправит локальные изменения пирам.
    */
   onChange(listener: (changes: EntityChange[], origin: ChangeOrigin) => void): () => void {

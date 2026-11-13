@@ -151,6 +151,13 @@ export interface Activity extends BaseEntity {
   to: string | null;
 }
 
+/** Сообщение чата проекта. Хранится и синхронизируется как остальные данные. */
+export interface Message extends BaseEntity {
+  projectId: EntityId;
+  authorId: EntityId | null;
+  text: string;
+}
+
 // ---------------------------------------------------------------------------
 // Коллекции
 // ---------------------------------------------------------------------------
@@ -163,6 +170,7 @@ export interface CollectionMap {
   people: Person;
   comments: Comment;
   activity: Activity;
+  messages: Message;
 }
 
 export type CollectionName = keyof CollectionMap;
@@ -174,11 +182,20 @@ export const COLLECTIONS: readonly CollectionName[] = [
   'people',
   'comments',
   'activity',
+  'messages',
 ];
 
 /** Полный снимок данных: все сущности всех коллекций, включая удалённые. */
 export type Snapshot = { [C in CollectionName]: CollectionMap[C][] };
 
 export function emptySnapshot(): Snapshot {
-  return { projects: [], issues: [], sprints: [], people: [], comments: [], activity: [] };
+  return {
+    projects: [],
+    issues: [],
+    sprints: [],
+    people: [],
+    comments: [],
+    activity: [],
+    messages: [],
+  };
 }

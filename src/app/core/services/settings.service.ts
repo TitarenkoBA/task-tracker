@@ -13,6 +13,10 @@ interface DeviceSettings {
   /** Язык интерфейса; 
 ull — определить по языку браузера. */
   language: Lang | null;
+  /** Проект, над которым идёт совместная работа, — чтобы продолжить её после перезапуска. */
+  collabProjectId: EntityId | null;
+  /** Когда чат проекта прочитан в последний раз (мс), по id проекта. */
+  chatReadAt: Record<EntityId, number>;
 }
 
 const STORAGE_KEY = 'task-tracker.settings';
@@ -21,6 +25,8 @@ const DEFAULTS: DeviceSettings = {
   currentUserId: null,
   lastProjectId: null,
   language: null,
+  collabProjectId: null,
+  chatReadAt: {},
 };
 
 /**
@@ -36,6 +42,8 @@ export class SettingsService {
   readonly currentUserId = () => this.state().currentUserId;
   readonly lastProjectId = () => this.state().lastProjectId;
   readonly language = () => this.state().language;
+  readonly collabProjectId = () => this.state().collabProjectId;
+  readonly chatReadAt = () => this.state().chatReadAt;
 
   constructor() {
     effect(() => this.write(this.state()));

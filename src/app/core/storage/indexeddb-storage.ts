@@ -17,10 +17,19 @@ interface TrackerDb extends DBSchema, EntityStores {
 
 const DB_NAME = 'task-tracker';
 /**
- * Версия схемы. Увеличивайте её при изменении структуры хранилищ
- * и добавляйте миграцию в `upgrade` (см. docs/architecture.md).
+ * Версия схемы. Увеличивайте её при изменении структуры хранилищ.
+ *
+ * ГЛАВНОЕ ПРАВИЛО: миграции только ДОБАВЛЯЮТ. Никогда не удаляйте и не очищайте
+ * хранилища в `upgrade` — у пользователей там их единственная копия данных.
+ *
+ * История версий:
+ * - 1 — projects, issues, sprints, people, comments, activity, meta;
+ * - 2 — + messages (чат проекта).
  */
-const DB_VERSION = 1;
+export const DB_VERSION = 2;
+
+/** Событие на `window`: эту вкладку попросили закрыть базу, потому что открылась более новая версия. */
+export const DB_OUTDATED_EVENT = 'task-tracker:db-outdated';
 
 /** Хранилище в IndexedDB браузера: по одному object store на коллекцию. */
 export class IndexedDbStorage implements StorageAdapter {
@@ -30,6 +39,8 @@ export class IndexedDbStorage implements StorageAdapter {
 
   private db(): Promise<IDBPDatabase<TrackerDb>> {
     this.dbPromise ??= openDB<TrackerDb>(this.name, DB_VERSION, {
+      // Создаём только недостающие хранилища — существующие данные не трогаются,
+      // с какой бы версии ни шло обновление.
       upgrade(db) {
         for (const collection of COLLECTIONS) {
           if (!db.objectStoreNames.contains(collection)) {
@@ -39,6 +50,13 @@ export class IndexedDbStorage implements StorageAdapter {
         if (!db.objectStoreNames.contains('meta')) {
           db.createObjectStore('meta');
         }
+      },
+      // Другая вкладка открыла новую версию приложения и ждёт обновления схемы.
+      // Освобождаем базу, иначе обновление зависнет, и просим эту вкладку перезагрузиться.
+      blocking: () => {
+        void this.dbPromise?.then((db) => db.close());
+        this.dbPromise = null;
+        globalThis.dispatchEvent?.(new Event(DB_OUTDATED_EVENT));
       },
     });
     return this.dbPromise;
