@@ -6,6 +6,7 @@
   "display": "standalone",
   "orientation": "any",
   "scope": "./",
+  "id": "/task-tracker/",
   "start_url": "./",
   "theme_color": "#4f46e5",
   "background_color": "#f8fafc",
