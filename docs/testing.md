@@ -26,6 +26,10 @@ npm run test:ci   # один прогон (для CI и перед коммит�
 | `core/services/export-import.service.spec.ts` | Проверка файла, перенос между «устройствами», слияние, удаление, замена |
 | `core/utils/utils.spec.ts` | Дробный порядок, даты и сроки |
 | `features/issues/issue-filter.spec.ts` | Поиск, фильтры и сортировка |
+| `core/storage/indexeddb-storage.spec.ts` | Обновление схемы IndexedDB 1 → 2 не теряет данные (fake-indexeddb), старая вкладка уступает базу |
+| `core/p2p/collaboration.service.spec.ts` | Совместная работа нескольких «устройств»: синхронизация, офлайн-правки, смена хоста, номера задач, защита чужих проектов |
+| `core/p2p/scope.spec.ts` | Протокол комнаты, проверка полей, фильтр проекта, попытки подменить данные |
+| `core/services/chat.service.spec.ts` | Чат: хранение, непрочитанные, удаление вместе с проектом |
 | `core/i18n/i18n.spec.ts` | Полнота словарей, подстановки, множественное число, смена языка, даты |
 | `core/utils/markdown.spec.ts` | Рендер Markdown и защита от HTML/опасных ссылок |
 | `shared/ui/markdown-editor.spec.ts` | Кнопки форматирования, предпросмотр, Ctrl+Enter |
@@ -83,6 +87,20 @@ it('показывает колонки', async () => {
 - Для демо-данных используйте `TestBed.inject(DemoDataService).create()`.
 - Тесты по умолчанию идут на русском. Другой язык: `setupTestStore({ lang: 'en' })` или `TestBed.inject(I18n).set('en')`.
 - Компонентам, которые используют `PwaService` (оболочка), нужен `provideServiceWorker('ngsw-worker.js', { enabled: false })`.
+
+### Несколько устройств
+
+Для сценариев совместной работы есть `createDevice(hub, name)` (`src/testing/device.ts`): у каждого
+«устройства» своя база и сервисы, а сеть общая — в памяти (`src/testing/memory-network.ts`):
+
+```ts
+const hub = new MemoryHub();
+const anna = await createDevice(hub, 'Анна');
+const boris = await createDevice(hub, 'Борис');
+await anna.collab.start(projectId);
+await boris.collab.join(roomIdFor(projectId));
+await settle(); // дождаться доставки сообщений
+```
 
 ## Ручная проверка перед релизом
 

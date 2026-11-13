@@ -24,6 +24,8 @@ erDiagram
   ISSUE   ||--o{ ACTIVITY : "история"
   PERSON  |o--o{ ISSUE : "исполнитель / автор"
   PERSON  |o--o{ COMMENT : "автор"
+  PROJECT ||--o{ MESSAGE : "чат"
+  PERSON  |o--o{ MESSAGE : "автор"
 ```
 
 ### `projects` — проекты
@@ -74,6 +76,10 @@ erDiagram
 
 `issueId`, `authorId`, `body` (Markdown).
 
+### `messages` — чат проекта
+
+`projectId`, `authorId`, `text` (простой текст, до 4000 символов). Синхронизируется вместе с проектом.
+
 ### `activity` — история изменений
 
 Записи только добавляются. `issueId`, `actorId`, `kind` (`created` / `changed` / `commented`),
@@ -102,7 +108,8 @@ erDiagram
     "sprints":  [ ],
     "people":   [ ],
     "comments": [ ],
-    "activity": [ ]
+    "activity": [ ],
+    "messages": [ ]   // с версии приложения с чатом; в старых файлах может отсутствовать
   }
 }
 ```
