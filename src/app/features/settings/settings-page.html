@@ -199,15 +199,16 @@
             'settings.collabText'
               | t
                 : {
-                    status: sharedProject() ? (collabStatus() | t) : ('settings.collabOffline' | t),
+                    status: collabStatus() | t,
                   }
           }}
         </p>
-        @if (sharedProject(); as project) {
+        @for (item of shared(); track item.project.id) {
           <a
-            class="mt-1 inline-block font-medium text-brand-600 hover:underline dark:text-brand-400"
-            [routerLink]="['/p', projects.routeKey(project), 'board']"
-            >{{ 'settings.collabProject' | t: { name: project.name } }}</a
+            class="mt-1 flex items-center gap-1.5 font-medium text-brand-600 hover:underline dark:text-brand-400"
+            [routerLink]="['/p', projects.routeKey(item.project), 'board']"
+            >{{ 'settings.collabProject' | t: { name: item.project.name } }}
+            <span class="font-normal text-slate-500">· {{ item.status | t }}</span></a
           >
         }
         <p class="mt-1 font-mono text-xs text-slate-400">

@@ -29,32 +29,25 @@ export const STATUS_DOT: Record<string, string> = {
       <div class="space-y-5 text-sm">
         @if (!isThisProject()) {
           <p class="leading-relaxed text-slate-600 dark:text-slate-300">{{ 'collab.intro' | t }}</p>
-          @if (otherProject(); as other) {
-            <p
-              class="rounded-xl bg-amber-50 p-3 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
-            >
-              {{ 'collab.otherProject' | t: { name: other.name } }}
-            </p>
-          }
         } @else {
           <!-- Статус -->
           <div class="flex items-center gap-2">
             <span class="size-2.5 rounded-full" [class]="dot()"></span>
             <span class="font-medium">{{ statusLabel() | t }}</span>
-            @if (collab.status() === 'online') {
+            @if (session()?.status() === 'online') {
               <span class="text-slate-500"
                 >· {{ 'collab.onlineCount' | t: { count: online() } }}</span
               >
             }
           </div>
-          @if (collab.error(); as error) {
+          @if (session()?.error(); as error) {
             <p
               class="rounded-xl bg-rose-50 p-3 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300"
             >
               {{ error | t }}
             </p>
           }
-          @if (collab.lost()) {
+          @if (session()?.lost()) {
             <p class="text-xs text-amber-600">{{ 'collab.signalingLost' | t }}</p>
           }
 
@@ -99,14 +92,14 @@ export const STATUS_DOT: Record<string, string> = {
                   >{{ people.me()?.name }}
                   <span class="text-slate-400">({{ 'collab.you' | t }})</span></span
                 >
-                @if (collab.role() === 'host') {
+                @if (session()?.role() === 'host') {
                   <span
                     class="chip h-5 bg-slate-100 text-[11px] text-slate-500 dark:bg-slate-800"
                     >{{ 'collab.host' | t }}</span
                   >
                 }
               </li>
-              @for (p of collab.participants(); track p.peerId) {
+              @for (p of session()?.participants() ?? []; track p.peerId) {
                 <li class="flex items-center gap-3 px-3 py-2">
                   <app-avatar size="sm" [person]="personFor(p.personId, p.name)" />
                   <span class="flex-1 truncate">{{ p.name }}</span>
@@ -146,10 +139,10 @@ export const STATUS_DOT: Record<string, string> = {
 
       <ng-container footer>
         @if (isThisProject()) {
-          <button type="button" class="btn-secondary text-rose-600!" (click)="collab.leave()">
+          <button type="button" class="btn-secondary text-rose-600!" (click)="leave()">
             {{ 'collab.leave' | t }}
           </button>
-          @if (collab.status() === 'error') {
+          @if (session()?.status() === 'error') {
             <button type="button" class="btn-primary" (click)="start()">
               {{ 'join.retry' | t }}
             </button>
@@ -172,22 +165,23 @@ export class CollabDialog {
   private readonly i18n = inject(I18n);
 
   protected readonly canShare = typeof navigator !== 'undefined' && 'share' in navigator;
-  protected readonly isThisProject = computed(
-    () => this.collab.projectId() === this.projectIdValue,
-  );
-  protected readonly otherProject = computed(() => {
-    const id = this.collab.projectId();
-    return id && id !== this.projectIdValue ? this.projects.get(id) : undefined;
-  });
+  protected readonly session = computed(() => this.collab.session(this.projectIdValue));
+  protected readonly isThisProject = computed(() => !!this.session());
   protected readonly link = computed(() => this.collab.inviteLink(this.projectIdValue));
   protected readonly online = computed(
-    () => this.collab.participants().filter((p) => p.connected).length + 1,
+    () => (this.session()?.participants() ?? []).filter((p) => p.connected).length + 1,
   );
-  protected readonly dot = computed(() => STATUS_DOT[this.collab.status()]);
-  protected readonly statusLabel = computed(() => `collab.status.${this.collab.status()}` as TKey);
+  protected readonly dot = computed(() => STATUS_DOT[this.session()?.status() ?? 'idle']);
+  protected readonly statusLabel = computed(
+    () => `collab.status.${this.session()?.status() ?? 'idle'}` as TKey,
+  );
 
   protected start(): void {
     void this.collab.start(this.projectIdValue);
+  }
+
+  protected leave(): void {
+    this.collab.leave(this.projectIdValue);
   }
 
   protected rename(me: Person, name: string): void {

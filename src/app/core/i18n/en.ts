@@ -409,7 +409,7 @@ export const en: Record<TKey, Entry> = {
   'collab.title': 'Collaboration',
   'collab.button': 'Share',
   'collab.intro':
-    'Work on the project together in real time. Devices connect directly (P2P): data travels between browsers, not through a server.',
+    'Work on the project together in real time. Devices connect directly (P2P): data travels between browsers, not through a server. You can share several projects at once.',
   'collab.start': 'Start collaborating',
   'collab.leave': 'Leave',
   'collab.leaveHint':
@@ -430,8 +430,6 @@ export const en: Record<TKey, Entry> = {
   'collab.status.reconnecting': 'Reconnecting…',
   'collab.status.error': 'Connection error',
   'collab.onlineCount': { one: '{count} person online', other: '{count} people online' },
-  'collab.otherProject':
-    'You are collaborating on "{name}" right now. Starting here will end that session.',
   'collab.joined': '{name} is joining the project',
   'collab.left': '{name} left the project',
   'collab.signalingLost':

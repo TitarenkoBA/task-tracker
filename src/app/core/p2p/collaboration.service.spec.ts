@@ -2,6 +2,7 @@ import { Device, createDevice } from '../../../testing/device';
 import { MemoryHub, settle } from '../../../testing/memory-network';
 import { setupTestStore } from '../../../testing/test-store';
 import { Project } from '../models/entities';
+import { SettingsService } from '../services/settings.service';
 import { roomIdFor } from './protocol';
 
 /**
@@ -38,6 +39,9 @@ describe('CollaborationService', () => {
     });
   });
 
+  /** Сессия проекта «Сайт» на устройстве. */
+  const web = (d: Device) => d.collab.session(project.id)!;
+
   async function connectBoth(): Promise<void> {
     expect(await anna.collab.start(project.id)).toBe(true);
     expect(await boris.collab.join(roomIdFor(project.id))).toBe(true);
@@ -46,11 +50,19 @@ describe('CollaborationService', () => {
 
   it('первый участник становится хостом, второй — гостем', async () => {
     await connectBoth();
-    expect(anna.collab.role()).toBe('host');
-    expect(boris.collab.role()).toBe('guest');
-    expect(anna.collab.status()).toBe('online');
-    expect(anna.collab.participants().map((p) => p.name)).toEqual(['Борис']);
-    expect(boris.collab.participants().map((p) => p.name)).toEqual(['Анна']);
+    expect(web(anna).role()).toBe('host');
+    expect(web(boris).role()).toBe('guest');
+    expect(web(anna).status()).toBe('online');
+    expect(
+      web(anna)
+        .participants()
+        .map((p) => p.name),
+    ).toEqual(['Борис']);
+    expect(
+      web(boris)
+        .participants()
+        .map((p) => p.name),
+    ).toEqual(['Анна']);
   });
 
   it('приглашённый получает проект целиком: задачи, чат и людей', async () => {
@@ -60,7 +72,7 @@ describe('CollaborationService', () => {
     expect(boris.chat.messages(project.id).map((m) => m.text)).toEqual(['Всем привет']);
     // Исполнитель задачи пришёл вместе с ней.
     expect(boris.people.get(anna.me.id)?.name).toBe('Анна');
-    expect(boris.collab.synced()).toBe(true);
+    expect(web(boris).synced()).toBe(true);
   });
 
   it('изменения расходятся в обе стороны в реальном времени', async () => {
@@ -109,7 +121,7 @@ describe('CollaborationService', () => {
     // Даже если Борис узнает id и пришлёт изменение — Анна его не примет.
     const secretIssue = anna.issues.issues().find((i) => i.title === 'Секрет')!;
     const room = (
-      boris.collab as unknown as { room: () => { broadcast: (m: unknown) => void } }
+      web(boris) as unknown as { room: () => { broadcast: (m: unknown) => void } }
     ).room();
     room.broadcast({
       type: 'sync',
@@ -182,7 +194,7 @@ describe('CollaborationService', () => {
     expect(await vera.collab.join(roomIdFor(project.id))).toBe(true);
     await settle(40);
     expect(
-      vera.collab
+      web(vera)
         .participants()
         .map((p) => p.name)
         .sort(),
@@ -204,9 +216,9 @@ describe('CollaborationService', () => {
     // Переподключение идёт с задержкой (с разбросом, чтобы не толкаться).
     await vi.waitFor(
       () => {
-        expect([boris.collab.role(), vera.collab.role()].sort()).toEqual(['guest', 'host']);
-        expect(boris.collab.status()).toBe('online');
-        expect(vera.collab.status()).toBe('online');
+        expect([web(boris).role(), web(vera).role()].sort()).toEqual(['guest', 'host']);
+        expect(web(boris).status()).toBe('online');
+        expect(web(vera).status()).toBe('online');
       },
       { timeout: 8000, interval: 50 },
     );
@@ -218,21 +230,80 @@ describe('CollaborationService', () => {
 
   it('войти по приглашению нельзя, если никого нет в сети и проекта у нас нет', async () => {
     expect(await boris.collab.join(roomIdFor(project.id))).toBe(false);
-    expect(boris.collab.error()).toBe('collab.error.noHost');
-    expect(boris.collab.role()).toBeNull();
+    expect(web(boris).error()).toBe('collab.error.noHost');
+    expect(web(boris).role()).toBeNull();
+    expect(web(boris).status()).toBe('error');
   });
 
   it('неверная ссылка-приглашение', async () => {
     expect(await boris.collab.join('not-a-room')).toBe(false);
-    expect(boris.collab.error()).toBe('collab.error.badLink');
+    expect(boris.collab.sessions()).toEqual([]);
   });
 
   it('выход оставляет данные проекта на устройстве', async () => {
     await connectBoth();
+    const session = web(boris);
     boris.collab.leave();
-    expect(boris.collab.status()).toBe('idle');
+    expect(session.status()).toBe('idle');
+    expect(boris.collab.session(project.id)).toBeUndefined();
     expect(boris.projects.get(project.id)).toBeDefined();
     expect(boris.issues.issues()).toHaveLength(1);
+  });
+
+  describe('несколько проектов сразу', () => {
+    let app: Project;
+
+    beforeEach(async () => {
+      app = anna.projects.create({ name: 'Приложение', key: 'APP', color: 'teal' });
+      anna.issues.create({ projectId: app.id, title: 'Экран входа' });
+      await connectBoth();
+      expect(await anna.collab.start(app.id)).toBe(true);
+      expect(await boris.collab.join(roomIdFor(app.id))).toBe(true);
+      await settle();
+    });
+
+    it('оба проекта в сети одновременно, изменения идут в свой проект', async () => {
+      for (const d of [anna, boris]) {
+        expect(d.collab.sessions().map((s) => s.status())).toEqual(['online', 'online']);
+      }
+      expect(boris.projects.get(app.id)?.name).toBe('Приложение');
+
+      boris.issues.create({ projectId: app.id, title: 'Из второго проекта' });
+      anna.issues.create({ projectId: project.id, title: 'Из первого проекта' });
+      await settle();
+      const titles = (d: Device, id: string) =>
+        d.issues
+          .issues()
+          .filter((i) => i.projectId === id)
+          .map((i) => i.title)
+          .sort();
+      expect(titles(anna, app.id)).toEqual(['Из второго проекта', 'Экран входа']);
+      expect(titles(boris, project.id)).toEqual(['Вёрстка', 'Из первого проекта']);
+    });
+
+    it('выход из одного проекта не трогает другой', async () => {
+      boris.collab.leave(app.id);
+      await settle();
+      expect(boris.collab.session(app.id)).toBeUndefined();
+      expect(web(boris).status()).toBe('online');
+
+      anna.issues.create({ projectId: project.id, title: 'После выхода из APP' });
+      await settle();
+      expect(boris.issues.issues().some((i) => i.title === 'После выхода из APP')).toBe(true);
+    });
+
+    it('после перезапуска продолжаются все сессии', async () => {
+      const settings = boris.injector.get(SettingsService);
+      expect([...settings.collabProjectIds()].sort()).toEqual([project.id, app.id].sort());
+      boris.collab.sessions().forEach((s) => s.stop());
+      boris.collab.leave();
+      settings.set('collabProjectIds', [project.id, app.id]);
+
+      boris.collab.resume();
+      await vi.waitFor(() =>
+        expect(boris.collab.sessions().map((s) => s.status())).toEqual(['online', 'online']),
+      );
+    });
   });
 
   it('ссылка-приглашение ведёт на /join/tt-<id проекта>', () => {

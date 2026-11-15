@@ -174,7 +174,7 @@ export class ChatPage {
   });
   protected readonly me = computed(() => this.people.me()?.id ?? null);
   protected readonly online = computed(
-    () => this.collab.projectId() === this.project()?.id && this.collab.status() === 'online',
+    () => this.collab.session(this.project()?.id)?.status() === 'online',
   );
   protected readonly draft = signal('');
   protected readonly maxLength = MAX_MESSAGE_LENGTH;

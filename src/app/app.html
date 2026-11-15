@@ -62,11 +62,11 @@
         >
           <span class="size-2.5 rounded-full" [class]="colors[project.color].solid"></span>
           <span class="truncate">{{ project.name }}</span>
-          @if (collab.projectId() === project.id) {
+          @if (collab.session(project.id); as session) {
             <span
               class="ml-auto size-2 shrink-0 rounded-full"
               [class]="
-                collab.status() === 'online' ? 'bg-emerald-500' : 'animate-pulse bg-amber-400'
+                session.status() === 'online' ? 'bg-emerald-500' : 'animate-pulse bg-amber-400'
               "
               [title]="'collab.title' | t"
             ></span>

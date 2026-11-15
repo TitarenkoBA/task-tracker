@@ -41,65 +41,55 @@ const RECONNECT_MAX_MS = 30_000;
 const MAX_HANDOVER_ATTEMPTS = 4;
 
 /**
- * Совместная работа над проектом в реальном времени.
+ * Совместная работа над проектами в реальном времени.
  *
  * - Комната проекта — `tt-<id проекта>`. Ссылка-приглашение содержит её ID.
+ * - Совместно можно работать над несколькими проектами сразу: у каждого своя сессия
+ *   (`CollabSession`) — своя комната, статус и переподключение. Сессии не зависят друг от друга.
  * - Подключение: попробовать войти в комнату; если её никто не держит — стать хостом.
  *   Поэтому, когда хост уходит, кто-то из оставшихся сам становится новым хостом,
  *   а остальные переподключаются к нему.
  * - При подключении участники обмениваются снимком проекта, дальше — изменениями.
  *   Слияние — тот же CRDT (LWW по полям), что и при импорте: никакие данные не затираются.
- * - Чужие проекты на устройстве никуда не отправляются и не могут быть изменены (scope.ts).
+ * - Чужие проекты на устройстве никуда не отправляются и не могут быть изменены (scope.ts):
+ *   каждая сессия пропускает только изменения своего проекта.
  */
 @Injectable({ providedIn: 'root' })
 export class CollaborationService {
   private readonly store = inject(DataStore);
   private readonly projects = inject(ProjectService);
-  private readonly issues = inject(IssueService);
-  private readonly people = inject(PeopleService);
   private readonly settings = inject(SettingsService);
-  private readonly toasts = inject(ToastService);
-  private readonly i18n = inject(I18n);
-  private readonly networkFactory = inject(NETWORK_FACTORY);
+  private readonly deps: SessionDeps = {
+    store: this.store,
+    issues: inject(IssueService),
+    people: inject(PeopleService),
+    toasts: inject(ToastService),
+    i18n: inject(I18n),
+    networkFactory: inject(NETWORK_FACTORY),
+  };
 
-  private readonly room = signal<Room | null>(null);
-  /** Проект, над которым идёт совместная работа (даже пока переподключаемся). */
-  readonly projectId = signal<EntityId | null>(null);
-  readonly status = signal<CollabStatus>('idle');
-  readonly error = signal<TKey | null>(null);
-  /** Получен ли снимок проекта от комнаты (для того, кто вошёл по приглашению). */
-  readonly synced = signal(false);
-
-  readonly role = computed(() => this.room()?.role ?? null);
-  readonly lost = computed(() => this.room()?.lost() ?? false);
-  readonly participants = computed<Participant[]>(() =>
-    (this.room()?.participants() ?? []).map((link) => ({
-      peerId: link.id,
-      // Карточка человека синхронизируется и меняется сразу, имя из метаданных — только при входе.
-      name: this.people.get(link.person())?.name || link.name() || '?',
-      personId: link.person(),
-      connected: link.status() === 'connected',
-      isHost: link.isHost,
-    })),
-  );
-  readonly active = computed(() => this.projectId() !== null);
-
-  /** Через какое соединение пришли изменения, которые сейчас применяются (для пересылки). */
-  private relaySource: PeerLink | null = null;
-  private generation = 0;
-  private reconnectTimer?: ReturnType<typeof setTimeout>;
-  private reconnectAttempts = 0;
+  private readonly sessionMap = signal<ReadonlyMap<EntityId, CollabSession>>(new Map());
+  /** Проекты, над которыми идёт совместная работа (даже пока переподключаемся). */
+  readonly sessions = computed(() => [...this.sessionMap().values()]);
+  readonly active = computed(() => this.sessionMap().size > 0);
 
   constructor() {
-    const off = this.store.onChange((changes, origin) => this.onStoreChange(changes, origin));
+    const off = this.store.onChange((changes, origin) =>
+      this.sessions().forEach((s) => s.onStoreChange(changes, origin)),
+    );
     // Закрываем каналы сразу, чтобы другие не ждали таймаута.
-    const onPageHide = (): void => this.room()?.close();
+    const onPageHide = (): void => this.sessions().forEach((s) => s.closeRoom());
     globalThis.addEventListener?.('pagehide', onPageHide);
     inject(DestroyRef).onDestroy(() => {
       off();
       globalThis.removeEventListener?.('pagehide', onPageHide);
-      this.stop();
+      this.sessions().forEach((s) => s.stop());
     });
+  }
+
+  /** Сессия проекта, если над ним идёт совместная работа. */
+  session(projectId: EntityId | null | undefined): CollabSession | undefined {
+    return projectId ? this.sessionMap().get(projectId) : undefined;
   }
 
   /** ID комнаты и ссылка-приглашение проекта. */
@@ -112,11 +102,11 @@ export class CollaborationService {
     return new URL(`join/${roomIdFor(projectId)}`, base).toString();
   }
 
-  /** Начать (или продолжить) совместную работу над своим проектом. */
+  /** Начать (или продолжить) совместную работу над своим проектом. Другие сессии не трогаются. */
   async start(projectId: EntityId): Promise<boolean> {
     if (!this.projects.get(projectId)) return false;
-    this.settings.set('collabProjectId', projectId);
-    return this.connect(projectId, true);
+    this.remember(projectId, true);
+    return this.open(projectId).connect(true);
   }
 
   /**
@@ -125,66 +115,122 @@ export class CollaborationService {
    */
   async join(roomId: string): Promise<boolean> {
     const projectId = projectIdFromRoom(roomId);
-    if (!projectId) {
-      this.fail('collab.error.badLink');
-      return false;
-    }
-    this.settings.set('collabProjectId', projectId);
-    return this.connect(projectId, !!this.projects.get(projectId));
+    if (!projectId) return false;
+    this.remember(projectId, true);
+    return this.open(projectId).connect(!!this.projects.get(projectId));
   }
 
-  /** После перезапуска приложения продолжить сессию, если она была. */
+  /** После перезапуска приложения продолжить все сессии, которые были. */
   resume(): void {
-    const projectId = this.settings.collabProjectId();
-    if (projectId && this.projects.get(projectId) && !this.active()) {
-      void this.connect(projectId, true);
+    for (const projectId of this.settings.collabProjectIds()) {
+      if (this.projects.get(projectId) && !this.session(projectId)) {
+        void this.open(projectId).connect(true);
+      }
     }
   }
 
-  /** Выйти из совместной работы. Данные проекта остаются на устройстве. */
-  leave(): void {
-    this.settings.set('collabProjectId', null);
-    this.stop();
+  /**
+   * Выйти из совместной работы над проектом (без аргумента — над всеми).
+   * Данные проектов остаются на устройстве.
+   */
+  leave(projectId?: EntityId): void {
+    const ids = projectId ? [projectId] : [...this.sessionMap().keys()];
+    for (const id of ids) {
+      this.remember(id, false);
+      this.session(id)?.stop();
+    }
+    this.sessionMap.update((map) => {
+      const next = new Map(map);
+      ids.forEach((id) => next.delete(id));
+      return next;
+    });
   }
 
   // ---------------------------------------------------------------------------
 
-  private stop(): void {
-    this.generation++;
-    clearTimeout(this.reconnectTimer);
-    this.reconnectAttempts = 0;
-    this.room()?.close();
-    this.room.set(null);
-    this.projectId.set(null);
-    this.status.set('idle');
-    this.error.set(null);
-    this.synced.set(false);
+  private open(projectId: EntityId): CollabSession {
+    const existing = this.session(projectId);
+    if (existing) return existing;
+    const session = new CollabSession(projectId, this.deps, () => !!this.projects.get(projectId));
+    this.sessionMap.update((map) => new Map(map).set(projectId, session));
+    return session;
   }
 
-  private async connect(projectId: EntityId, allowHost: boolean): Promise<boolean> {
-    if (this.projectId() !== projectId) {
-      this.stop();
-      this.projectId.set(projectId);
-    }
+  private remember(projectId: EntityId, on: boolean): void {
+    const ids = this.settings.collabProjectIds().filter((id) => id !== projectId);
+    this.settings.set('collabProjectIds', on ? [...ids, projectId] : ids);
+  }
+}
+
+interface SessionDeps {
+  store: DataStore;
+  issues: IssueService;
+  people: PeopleService;
+  toasts: ToastService;
+  i18n: I18n;
+  networkFactory: NetworkFactory;
+}
+
+/** Совместная работа над одним проектом: комната, статус, переподключение. */
+export class CollabSession {
+  private readonly room = signal<Room | null>(null);
+  readonly status = signal<CollabStatus>('idle');
+  readonly error = signal<TKey | null>(null);
+  /** Получен ли снимок проекта от комнаты (для того, кто вошёл по приглашению). */
+  readonly synced = signal(false);
+
+  readonly role = computed(() => this.room()?.role ?? null);
+  readonly lost = computed(() => this.room()?.lost() ?? false);
+  readonly participants = computed<Participant[]>(() =>
+    (this.room()?.participants() ?? []).map((link) => ({
+      peerId: link.id,
+      // Карточка человека синхронизируется и меняется сразу, имя из метаданных — только при входе.
+      name: this.deps.people.get(link.person())?.name || link.name() || '?',
+      personId: link.person(),
+      connected: link.status() === 'connected',
+      isHost: link.isHost,
+    })),
+  );
+
+  /** Через какое соединение пришли изменения, которые сейчас применяются (для пересылки). */
+  private relaySource: PeerLink | null = null;
+  private generation = 0;
+  private reconnectTimer?: ReturnType<typeof setTimeout>;
+  private reconnectAttempts = 0;
+  private stopped = false;
+
+  constructor(
+    readonly projectId: EntityId,
+    private readonly deps: SessionDeps,
+    /** Есть ли проект на устройстве: только тогда можно стать хостом. */
+    private readonly hasProject: () => boolean,
+  ) {}
+
+  async connect(allowHost: boolean): Promise<boolean> {
+    this.stopped = false;
     const generation = ++this.generation;
     clearTimeout(this.reconnectTimer);
-    this.room()?.close();
-    this.room.set(null);
+    this.closeRoom();
     this.error.set(null);
     this.status.set(this.reconnectAttempts ? 'reconnecting' : 'connecting');
-    this.synced.set(!!this.projects.get(projectId));
+    this.synced.set(this.hasProject());
 
-    const roomId = roomIdFor(projectId);
-    const me = { name: this.myName(), person: this.people.me()?.id ?? null };
+    const roomId = roomIdFor(this.projectId);
+    const me = { name: this.myName(), person: this.deps.people.me()?.id ?? null };
 
     for (let attempt = 0; attempt < MAX_HANDOVER_ATTEMPTS; attempt++) {
       try {
-        const room = await Room.join(this.networkFactory, roomId, me, this.handlers(generation));
+        const room = await Room.join(
+          this.deps.networkFactory,
+          roomId,
+          me,
+          this.handlers(generation),
+        );
         return this.opened(room, generation);
       } catch (error) {
         if (generation !== this.generation) return false;
         if (!(error instanceof NetworkError && error.code === 'peer-unavailable')) {
-          return this.connectFailed(error, projectId, generation);
+          return this.connectFailed(error, generation);
         }
       }
       // Комнату никто не держит.
@@ -193,18 +239,62 @@ export class CollaborationService {
         return false;
       }
       try {
-        const room = await Room.host(this.networkFactory, roomId, me, this.handlers(generation));
+        const room = await Room.host(
+          this.deps.networkFactory,
+          roomId,
+          me,
+          this.handlers(generation),
+        );
         return this.opened(room, generation);
       } catch (error) {
         if (generation !== this.generation) return false;
         // Кто-то стал хостом одновременно с нами — подключимся к нему.
         if (!(error instanceof NetworkError && error.code === 'unavailable-id')) {
-          return this.connectFailed(error, projectId, generation);
+          return this.connectFailed(error, generation);
         }
       }
     }
-    return this.connectFailed(new RoomError('no-answer'), projectId, generation);
+    return this.connectFailed(new RoomError('no-answer'), generation);
   }
+
+  stop(): void {
+    this.stopped = true;
+    this.generation++;
+    clearTimeout(this.reconnectTimer);
+    this.reconnectAttempts = 0;
+    this.closeRoom();
+    this.status.set('idle');
+    this.error.set(null);
+    this.synced.set(false);
+  }
+
+  closeRoom(): void {
+    this.room()?.close();
+    this.room.set(null);
+  }
+
+  onStoreChange(changes: EntityChange[], origin: 'local' | 'remote' | 'import'): void {
+    const room = this.room();
+    if (!room) return;
+    if (origin === 'remote') {
+      // Хост пересылает чужие изменения остальным: вдруг у них нет прямой связи друг с другом.
+      // Слияние идемпотентно, поэтому дубли безвредны, а цикла нет — дальше хоста не уходит.
+      // relaySource есть только у сессии, которая сейчас применяет пришедшие изменения.
+      if (room.role === 'host' && this.relaySource && changes.length) {
+        room.broadcast({ type: 'sync', changes, initial: false }, this.relaySource);
+      }
+      return;
+    }
+    const outgoing = filterOutgoing(
+      changes,
+      this.deps.store.raw,
+      this.projectId,
+      this.participantPeople(),
+    );
+    if (outgoing.length) room.broadcast({ type: 'sync', changes: outgoing, initial: false });
+  }
+
+  // ---------------------------------------------------------------------------
 
   private opened(room: Room, generation: number): boolean {
     if (generation !== this.generation) {
@@ -217,12 +307,12 @@ export class CollaborationService {
     return true;
   }
 
-  private connectFailed(error: unknown, projectId: EntityId, generation: number): boolean {
+  private connectFailed(error: unknown, generation: number): boolean {
     if (generation !== this.generation) return false;
     const code = errorKey(error);
     // Сетевые сбои — повторяем в фоне; ошибки комнаты (переполнена, другая версия) — нет.
     if (error instanceof NetworkError && (error.code === 'network' || error.code === 'timeout')) {
-      this.scheduleReconnect(projectId, code);
+      this.scheduleReconnect(code);
     } else {
       this.fail(code);
     }
@@ -234,9 +324,8 @@ export class CollaborationService {
     this.error.set(code);
   }
 
-  private scheduleReconnect(projectId: EntityId, reason: TKey | null = null): void {
-    this.room()?.close();
-    this.room.set(null);
+  private scheduleReconnect(reason: TKey | null = null): void {
+    this.closeRoom();
     this.status.set('reconnecting');
     this.error.set(reason);
     const generation = this.generation;
@@ -247,8 +336,8 @@ export class CollaborationService {
     this.reconnectAttempts++;
     clearTimeout(this.reconnectTimer);
     this.reconnectTimer = setTimeout(() => {
-      if (generation === this.generation && this.projectId() === projectId) {
-        void this.connect(projectId, !!this.projects.get(projectId));
+      if (generation === this.generation && !this.stopped) {
+        void this.connect(this.hasProject());
       }
     }, delay);
   }
@@ -260,15 +349,14 @@ export class CollaborationService {
       message: (link, message) => current() && this.receive(link, message.changes, message.initial),
       left: (link) => {
         if (current() && link.name()) {
-          this.toasts.show(this.i18n.t('collab.left', { name: link.name() }));
+          this.deps.toasts.show(this.deps.i18n.t('collab.left', { name: link.name() }));
         }
       },
       closed: () => {
-        const projectId = this.projectId();
-        if (current() && projectId) this.scheduleReconnect(projectId);
+        if (current() && !this.stopped) this.scheduleReconnect();
       },
       error: (err) => {
-        if (current()) this.toasts.error(this.i18n.t(errorKey(err)));
+        if (current()) this.deps.toasts.error(this.deps.i18n.t(errorKey(err)));
       },
     };
   }
@@ -276,64 +364,49 @@ export class CollaborationService {
   /**
    * Участник готов к обмену — отправляем ему снимок проекта. Пишем прямо в его канал:
    * у гостя это происходит в момент приветствия хоста, когда Room.join() ещё не вернул
-   * комнату в этот сервис.
+   * комнату в эту сессию.
    */
   private sendSnapshot(link: PeerLink): void {
-    const projectId = this.projectId();
-    if (!projectId) return;
     if (link.name() && !link.isHost && this.room()?.role === 'host') {
-      this.toasts.show(this.i18n.t('collab.joined', { name: link.name() }));
+      this.deps.toasts.show(this.deps.i18n.t('collab.joined', { name: link.name() }));
     }
-    const me = this.people.me()?.id;
-    const changes = projectSnapshot(this.store.raw, projectId, me ? [me] : []).map(
+    const me = this.deps.people.me()?.id;
+    const changes = projectSnapshot(this.deps.store.raw, this.projectId, me ? [me] : []).map(
       ({ collection, entity }) => entityToChange(collection, entity),
     );
     link.send({ type: 'sync', changes, initial: true });
   }
 
   private receive(link: PeerLink, changes: EntityChange[], initial: boolean): void {
-    const projectId = this.projectId();
-    if (!projectId) return;
-    const accepted = filterIncoming(changes, this.store.raw, projectId, this.participantPeople());
+    const accepted = filterIncoming(
+      changes,
+      this.deps.store.raw,
+      this.projectId,
+      this.participantPeople(),
+    );
     this.relaySource = link;
     try {
-      this.store.applyChanges(accepted, 'remote');
+      this.deps.store.applyChanges(accepted, 'remote');
     } finally {
       this.relaySource = null;
     }
     if (accepted.some((c) => c.collection === 'issues')) {
-      this.issues.resolveNumberConflicts(projectId);
+      this.deps.issues.resolveNumberConflicts(this.projectId);
     }
-    if (initial && this.projects.get(projectId)) this.synced.set(true);
-  }
-
-  private onStoreChange(changes: EntityChange[], origin: 'local' | 'remote' | 'import'): void {
-    const room = this.room();
-    const projectId = this.projectId();
-    if (!room || !projectId) return;
-    if (origin === 'remote') {
-      // Хост пересылает чужие изменения остальным: вдруг у них нет прямой связи друг с другом.
-      // Слияние идемпотентно, поэтому дубли безвредны, а цикла нет — дальше хоста не уходит.
-      if (room.role === 'host' && this.relaySource && changes.length) {
-        room.broadcast({ type: 'sync', changes, initial: false }, this.relaySource);
-      }
-      return;
-    }
-    const outgoing = filterOutgoing(changes, this.store.raw, projectId, this.participantPeople());
-    if (outgoing.length) room.broadcast({ type: 'sync', changes: outgoing, initial: false });
+    if (initial && this.hasProject()) this.synced.set(true);
   }
 
   private participantPeople(): EntityId[] {
     const ids = this.participants()
       .map((p) => p.personId)
       .filter((id): id is string => !!id);
-    const me = this.people.me()?.id;
+    const me = this.deps.people.me()?.id;
     return me ? [...ids, me] : ids;
   }
 
   private myName(): string {
-    const me = this.people.me();
-    return me && !this.people.hasDefaultName(me) ? me.name : '';
+    const me = this.deps.people.me();
+    return me && !this.deps.people.hasDefaultName(me) ? me.name : '';
   }
 }
 

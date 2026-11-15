@@ -56,10 +56,10 @@ import { Icon } from '../../shared/ui/icon';
                   <span
                     class="size-4 animate-spin rounded-full border-2 border-brand-500 border-t-transparent"
                   ></span>
-                  {{ (collab.status() === 'online' ? 'join.waiting' : 'join.connecting') | t }}
+                  {{ (session()?.status() === 'online' ? 'join.waiting' : 'join.connecting') | t }}
                 </p>
               }
-              @if (collab.error(); as error) {
+              @if (session()?.error(); as error) {
                 <p
                   class="rounded-xl bg-rose-50 p-3 text-sm text-rose-700 dark:bg-rose-950/50 dark:text-rose-300"
                 >
@@ -67,7 +67,7 @@ import { Icon } from '../../shared/ui/icon';
                 </p>
               }
               <button type="button" class="btn-primary w-full" [disabled]="busy()" (click)="join()">
-                {{ (collab.error() ? 'join.retry' : 'join.button') | t }}
+                {{ (session()?.error() ? 'join.retry' : 'join.button') | t }}
               </button>
             }
           </div>
@@ -89,21 +89,25 @@ export class JoinPage {
   protected readonly needsName = computed(() => this.people.hasDefaultName(this.people.me()));
   private readonly projectId = computed(() => projectIdFromRoom(this.roomId()));
   protected readonly validLink = computed(() => !!this.projectId());
-  protected readonly busy = computed(
-    () =>
-      this.started() &&
-      !this.collab.error() &&
-      (this.collab.status() === 'connecting' ||
-        this.collab.status() === 'reconnecting' ||
-        (this.collab.status() === 'online' && !this.collab.synced())),
-  );
+  /** Сессия этого проекта: статус и ошибка входа. */
+  protected readonly session = computed(() => this.collab.session(this.projectId()));
+  protected readonly busy = computed(() => {
+    const session = this.session();
+    if (!this.started() || !session || session.error()) return false;
+    const status = session.status();
+    return (
+      status === 'connecting' ||
+      status === 'reconnecting' ||
+      (status === 'online' && !session.synced())
+    );
+  });
 
   constructor() {
     // Проект пришёл — открываем его.
     effect(() => {
       const id = this.projectId();
       const project = this.projects.get(id);
-      if (this.started() && project && this.collab.projectId() === id && this.collab.synced()) {
+      if (this.started() && project && this.session()?.synced()) {
         this.projects.select(project.id);
         void this.router.navigate(['/p', this.projects.routeKey(project), 'board'], {
           replaceUrl: true,

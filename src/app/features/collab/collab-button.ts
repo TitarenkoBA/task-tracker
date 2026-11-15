@@ -74,13 +74,14 @@ export class CollabButton {
   private readonly chat = inject(ChatService);
   private readonly dialogs = inject(DialogService);
 
-  protected readonly isThisProject = computed(() => this.collab.projectId() === this.project().id);
-  protected readonly dot = computed(() => STATUS_DOT[this.collab.status()]);
+  private readonly session = computed(() => this.collab.session(this.project().id));
+  protected readonly isThisProject = computed(() => !!this.session());
+  protected readonly dot = computed(() => STATUS_DOT[this.session()?.status() ?? 'idle']);
   protected readonly unread = computed(() => this.chat.unread(this.project().id));
   /** Другие участники в сети — для аватаров на кнопке. */
   protected readonly online = computed<Person[]>(() =>
     this.isThisProject()
-      ? this.collab
+      ? this.session()!
           .participants()
           .filter((p) => p.connected)
           .map(

@@ -13,8 +13,8 @@ interface DeviceSettings {
   /** Язык интерфейса; 
 ull — определить по языку браузера. */
   language: Lang | null;
-  /** Проект, над которым идёт совместная работа, — чтобы продолжить её после перезапуска. */
-  collabProjectId: EntityId | null;
+  /** Проекты, над которыми идёт совместная работа, — чтобы продолжить её после перезапуска. */
+  collabProjectIds: EntityId[];
   /** Когда чат проекта прочитан в последний раз (мс), по id проекта. */
   chatReadAt: Record<EntityId, number>;
 }
@@ -25,7 +25,7 @@ const DEFAULTS: DeviceSettings = {
   currentUserId: null,
   lastProjectId: null,
   language: null,
-  collabProjectId: null,
+  collabProjectIds: [],
   chatReadAt: {},
 };
 
@@ -42,7 +42,7 @@ export class SettingsService {
   readonly currentUserId = () => this.state().currentUserId;
   readonly lastProjectId = () => this.state().lastProjectId;
   readonly language = () => this.state().language;
-  readonly collabProjectId = () => this.state().collabProjectId;
+  readonly collabProjectIds = () => this.state().collabProjectIds;
   readonly chatReadAt = () => this.state().chatReadAt;
 
   constructor() {
@@ -56,9 +56,14 @@ export class SettingsService {
   private read(): DeviceSettings {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      return raw
-        ? { ...DEFAULTS, ...(JSON.parse(raw) as Partial<DeviceSettings>) }
-        : { ...DEFAULTS };
+      if (!raw) return { ...DEFAULTS };
+      const { collabProjectId, ...saved } = JSON.parse(raw) as Partial<DeviceSettings> & {
+        /** До совместной работы над несколькими проектами сразу — один проект. */
+        collabProjectId?: EntityId | null;
+      };
+      const settings = { ...DEFAULTS, ...saved };
+      if (!saved.collabProjectIds && collabProjectId) settings.collabProjectIds = [collabProjectId];
+      return settings;
     } catch {
       return { ...DEFAULTS };
     }

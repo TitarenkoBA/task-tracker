@@ -31,9 +31,19 @@ export class SettingsPage {
   protected readonly pwa = inject(PwaService);
   protected readonly collab = inject(CollaborationService);
   protected readonly projects = inject(ProjectService);
-  /** Проект, над которым идёт совместная работа. */
-  protected readonly sharedProject = computed(() => this.projects.get(this.collab.projectId()));
-  protected readonly collabStatus = computed(() => `collab.status.${this.collab.status()}` as TKey);
+  /** Проекты, над которыми идёт совместная работа, и статус каждого. */
+  protected readonly shared = computed(() =>
+    this.collab.sessions().flatMap((session) => {
+      const project = this.projects.get(session.projectId);
+      return project ? [{ project, status: `collab.status.${session.status()}` as TKey }] : [];
+    }),
+  );
+  /** Общий статус: «в сети», если хотя бы один проект в сети. */
+  protected readonly collabStatus = computed<TKey>(() => {
+    const statuses = this.collab.sessions().map((s) => s.status());
+    if (!statuses.length) return 'settings.collabOffline';
+    return `collab.status.${statuses.includes('online') ? 'online' : statuses[0]}` as TKey;
+  });
   protected readonly i18n = inject(I18n);
   private readonly store = inject(DataStore);
   private readonly exporter = inject(ExportImportService);
