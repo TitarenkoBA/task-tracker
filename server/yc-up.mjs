@@ -10,7 +10,7 @@
  * новый токен владельца, журнал сбрасывается.
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -60,8 +60,8 @@ function die(message) {
   process.exit(1);
 }
 
-function run(command, commandArgs, { allowFail = false, input } = {}) {
-  const result = spawnSync(command, commandArgs, { encoding: 'utf8', input, cwd: serverDir });
+function run(command, commandArgs, { allowFail = false, input, env } = {}) {
+  const result = spawnSync(command, commandArgs, { encoding: 'utf8', input, cwd: serverDir, env });
   if (result.error) {
     die(
       command === 'yc'
@@ -182,13 +182,22 @@ function openPorts() {
   return domain ? [80, 443, 22] : [8787, 22];
 }
 
+const egressRule = 'direction=egress,protocol=any,from-port=0,to-port=65535,v4-cidrs=[0.0.0.0/0]';
+
+function rulesOf(group) {
+  return group?.rules ?? [];
+}
+
 function hasIngress(group, port) {
-  const rules = group?.rules ?? [];
-  return rules.some((rule) => {
+  return rulesOf(group).some((rule) => {
     const direction = String(rule.direction ?? '').toLowerCase();
     const from = String(rule.ports?.from_port ?? rule.ports?.fromPort ?? '');
     return direction === 'ingress' && from === String(port);
   });
+}
+
+function hasEgress(group) {
+  return rulesOf(group).some((rule) => String(rule.direction ?? '').toLowerCase() === 'egress');
 }
 
 function ensureGroup(networkId) {
@@ -203,12 +212,23 @@ function ensureGroup(networkId) {
       '--network-id',
       networkId,
       '--rule',
-      'direction=egress,protocol=any,v4-cidrs=[0.0.0.0/0]',
+      egressRule,
     ];
     for (const port of openPorts()) {
       command.push('--rule', `direction=ingress,port=${port},protocol=tcp,v4-cidrs=[0.0.0.0/0]`);
     }
     return ycJson(command);
+  }
+  if (!hasEgress(group)) {
+    group = ycJson([
+      'vpc',
+      'security-group',
+      'update-rules',
+      '--id',
+      idOf(group),
+      '--add-rule',
+      egressRule,
+    ]);
   }
   for (const port of openPorts()) {
     if (hasIngress(group, port)) continue;
@@ -225,59 +245,108 @@ function ensureGroup(networkId) {
   return group;
 }
 
-function writeCompose(image) {
+function writeCloudInit(image, publicKeyPath) {
+  const publicKey = readFileSync(publicKeyPath, 'utf8')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find(Boolean);
+  if (!publicKey) die('Публичный SSH-ключ пуст.');
+  const publish = domain ? '' : 'run_args+=(-p 8787:8787)\n';
+  const originEnv = origin ? `run_args+=(-e ORIGIN=${origin})\n` : '';
+  const caddy = domain
+    ? `docker rm -f task-tracker-caddy >/dev/null 2>&1 || true
+docker run -d --name task-tracker-caddy --restart always --network task-tracker \\
+  -p 80:80 -p 443:443 \\
+  -v caddy-data:/data -v caddy-config:/config \\
+  caddy:2 caddy reverse-proxy --from ${domain} --to hub:8787
+`
+    : '';
+  const script = `#!/bin/bash
+set -euo pipefail
+systemctl enable --now docker
+token="$(curl -sf -H "Metadata-Flavor: Google" http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token | jq -r .access_token)"
+echo "$token" | docker login --username iam --password-stdin cr.yandex
+docker network create task-tracker >/dev/null 2>&1 || true
+docker rm -f task-tracker >/dev/null 2>&1 || true
+run_args=(
+  -d --name task-tracker --restart always
+  --network task-tracker --network-alias hub
+  -e HOST=0.0.0.0 -e PORT=8787 -e DATA_DIR=/data -e PRINT_OWNER_TOKEN=1
+  -v task-tracker-data:/data
+)
+${publish}${originEnv}docker run "\${run_args[@]}" ${image}
+${caddy}`;
+  // Cloud-init подставляет $переменные. Удвоение оставляет их для bash на машине.
+  const indented = script
+    .replaceAll('$', '$$')
+    .split('\n')
+    .map((line) => `      ${line}`)
+    .join('\n');
   const dir = join(serverDir, '.deploy');
   mkdirSync(dir, { recursive: true });
-  const path = join(dir, 'docker-compose.yaml');
-  const originLine = origin ? `\n      ORIGIN: ${JSON.stringify(origin)}` : '';
+  const path = join(dir, 'cloud-init.yaml');
   writeFileSync(
     path,
-    `version: "3.7"
-services:
-  hub:
-    container_name: task-tracker
-    image: ${image}
-    environment:
-      HOST: 0.0.0.0
-      PORT: "8787"
-      DATA_DIR: /data
-      PRINT_OWNER_TOKEN: "1"${originLine}
-    volumes:
-      - hub-data:/data
-    restart: always
-  caddy:
-    container_name: task-tracker-caddy
-    image: caddy:2
-    command:
-      - reverse-proxy
-      - --from
-      - ${domain}
-      - --to
-      - hub:8787
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - caddy-data:/data
-      - caddy-config:/config
-    restart: always
-volumes:
-  hub-data:
-  caddy-data:
-  caddy-config:
+    `#cloud-config
+users:
+  - name: yc-user
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ${JSON.stringify(publicKey)}
+package_update: true
+packages:
+  - docker.io
+  - jq
+  - curl
+write_files:
+  - path: /opt/task-tracker/start.sh
+    permissions: "0755"
+    content: |
+${indented}
+runcmd:
+  - /opt/task-tracker/start.sh
 `,
   );
   return path;
 }
 
+function dockerCommand() {
+  const candidates = [
+    join('D:\\soft\\Docker', 'resources', 'bin', 'docker.exe'),
+    process.env.ProgramFiles && join(process.env.ProgramFiles, 'Docker', 'Docker', 'resources', 'bin', 'docker.exe'),
+    process.env.LOCALAPPDATA && join(process.env.LOCALAPPDATA, 'Programs', 'DockerDesktop', 'resources', 'bin', 'docker.exe'),
+  ].filter(Boolean);
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) return candidate;
+  }
+  const found = spawnSync('where.exe', ['docker'], { encoding: 'utf8' });
+  const line = found.stdout?.split(/\r?\n/).find(Boolean);
+  if (found.status === 0 && line) return line.trim();
+  die('Не найден Docker. Запустите Docker Desktop и повторите команду.');
+}
+
+function dockerEnv(docker) {
+  const bin = dirname(docker);
+  const current = process.env.PATH || '';
+  const path = current.toLowerCase().includes(bin.toLowerCase()) ? current : `${bin};${current}`;
+  return { ...process.env, PATH: path, Path: path };
+}
+
 function buildAndPush(image) {
+  const docker = dockerCommand();
+  const env = dockerEnv(docker);
   console.log('Собираю образ…');
-  const built = spawnSync('docker', ['build', '-t', image, '.'], { cwd: serverDir, stdio: 'inherit' });
+  const built = spawnSync(
+    docker,
+    ['build', '--provenance=false', '--sbom=false', '-t', image, '.'],
+    { cwd: serverDir, env, stdio: 'inherit' },
+  );
   if (built.error) die('Не найден Docker. Запустите Docker Desktop и повторите команду.');
   if (built.status !== 0) process.exit(built.status ?? 1);
   console.log('Загружаю образ в Container Registry…');
-  yc(['container', 'registry', 'configure-docker']);
-  const pushed = spawnSync('docker', ['push', image], { stdio: 'inherit' });
+  yc(['container', 'registry', 'configure-docker'], { env });
+  const pushed = spawnSync(docker, ['push', image], { env, stdio: 'inherit' });
   if (pushed.status !== 0) process.exit(pushed.status ?? 1);
 }
 
@@ -285,7 +354,7 @@ function createVm(subnetId, groupId, image, publicKey) {
   const command = [
     'compute',
     'instance',
-    'create-with-container',
+    'create',
     '--name',
     VM,
     '--zone',
@@ -297,26 +366,15 @@ function createVm(subnetId, groupId, image, publicKey) {
     '--memory',
     '1',
     '--create-boot-disk',
-    'size=30,auto-delete=true',
+    'image-folder-id=standard-images,image-family=ubuntu-2404-lts,size=20,type=network-hdd,auto-delete=true',
     '--network-interface',
     `subnet-id=${subnetId},nat-ip-version=ipv4,security-group-ids=${groupId}`,
     '--service-account-name',
     ACCOUNT,
-    '--ssh-key',
-    publicKey,
+    '--metadata-from-file',
+    `user-data=${writeCloudInit(image, publicKey)}`,
   ];
-  if (domain) {
-    command.push('--description', domain, '--docker-compose-file', writeCompose(image));
-  } else {
-    command.push(
-      '--container-name',
-      'task-tracker',
-      '--container-image',
-      image,
-      '--container-env',
-      'HOST=0.0.0.0,PORT=8787,DATA_DIR=/data,PRINT_OWNER_TOKEN=1',
-    );
-  }
+  if (domain) command.push('--description', domain);
   if (preemptible) command.push('--preemptible');
   console.log('Создаю виртуальную машину…');
   return ycJson(command);
@@ -324,14 +382,14 @@ function createVm(subnetId, groupId, image, publicKey) {
 
 async function waitHealth(ip) {
   const url = `http://${ip}:8787/health`;
-  for (let attempt = 1; attempt <= 36; attempt += 1) {
+  for (let attempt = 1; attempt <= 48; attempt += 1) {
     try {
       const response = await fetch(url, { signal: AbortSignal.timeout(4000) });
       if (response.ok) return;
     } catch {
       // Образ ещё скачивается.
     }
-    console.log(`Жду, пока сервер откроется… (${attempt}/36)`);
+    console.log(`Жду, пока сервер откроется… (${attempt}/48)`);
     await new Promise((resolve) => setTimeout(resolve, 5000));
   }
   die(`Сервер не ответил на ${url}. Логи: yc compute instance get-serial-port-output --name ${VM}`);
@@ -391,7 +449,7 @@ if (!instance) {
   const ip = publicIp(instance);
   if (!ip) die('Машина создана, но публичный адрес ещё не виден. Повторите команду через минуту.');
   if (!domain) await waitHealth(ip);
-  const token = readToken(ip, keys.privateKey, domain ? 30 : 6);
+  const token = readToken(ip, keys.privateKey, domain ? 40 : 12);
   report(ip, token, domain);
 } else {
   const runningDomain = instance.description ?? '';
