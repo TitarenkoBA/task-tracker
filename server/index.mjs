@@ -200,6 +200,8 @@ if (isMain) {
   if (hub.owner) {
     console.log(`Первый запуск. Токен владельца: ${dataDir}\\owner-token.txt`);
     console.log('Передайте его себе и больше никому. Повторно сервер его не показывает.');
+    // В облаке серийная консоль — запасной способ забрать токен. Локально переменную не ставят.
+    if (process.env.PRINT_OWNER_TOKEN === '1') console.log(`OWNER_TOKEN=${hub.owner.token}`);
   }
   await startServer(hub, port, host);
   console.log(`Task Tracker слушает http://${host}:${port}`);

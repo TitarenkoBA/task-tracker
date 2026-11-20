@@ -5,7 +5,8 @@
   "description": "Командный сервер Task Tracker: личные токены, роли, журнал изменений",
   "scripts": {
     "start": "node index.mjs",
-    "test": "node --test --test-concurrency=1"
+    "test": "node --test --test-concurrency=1",
+    "up": "node yc-up.mjs"
   },
   "dependencies": {
     "ws": "^8.18.3"
