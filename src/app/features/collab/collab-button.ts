@@ -3,6 +3,8 @@ import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '../../core/i18n/i18n.service';
 import { Person, Project } from '../../core/models/entities';
 import { CollaborationService } from '../../core/p2p/collaboration.service';
+import { TeamSyncService } from '../../core/sync/team-sync.service';
+import { SettingsService } from '../../core/services/settings.service';
 import { ChatService } from '../../core/services/chat.service';
 import { PeopleService } from '../../core/services/people.service';
 import { ProjectService } from '../../core/services/project.service';
@@ -70,13 +72,21 @@ export class CollabButton {
 
   protected readonly projects = inject(ProjectService);
   private readonly collab = inject(CollaborationService);
+  private readonly team = inject(TeamSyncService);
+  private readonly settings = inject(SettingsService);
   private readonly people = inject(PeopleService);
   private readonly chat = inject(ChatService);
   private readonly dialogs = inject(DialogService);
 
   private readonly session = computed(() => this.collab.session(this.project().id));
-  protected readonly isThisProject = computed(() => !!this.session());
-  protected readonly dot = computed(() => STATUS_DOT[this.session()?.status() ?? 'idle']);
+  protected readonly isThisProject = computed(() =>
+    this.settings.collabProjectIds().includes(this.project().id),
+  );
+  protected readonly dot = computed(() => {
+    const status =
+      this.settings.syncMode() === 'p2p' ? this.session()?.status() : this.team.status();
+    return STATUS_DOT[status ?? 'idle'];
+  });
   protected readonly unread = computed(() => this.chat.unread(this.project().id));
   /** Другие участники в сети — для аватаров на кнопке. */
   protected readonly online = computed<Person[]>(() =>

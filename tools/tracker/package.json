@@ -1,0 +1,17 @@
+{
+  "name": "task-tracker-cli",
+  "private": true,
+  "type": "module",
+  "description": "CLI-участник P2P-комнаты трекера: читает и меняет задачи проекта из терминала",
+  "bin": {
+    "tracker": "tracker.mjs"
+  },
+  "dependencies": {
+    "node-datachannel": "^0.32.0",
+    "peerjs": "1.5.5",
+    "yjs": "^13.6.33"
+  },
+  "allowScripts": {
+    "node-datachannel@0.32.3": true
+  }
+}

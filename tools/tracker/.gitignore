@@ -1,0 +1,4 @@
+node_modules/
+# Локальная реплика проекта и её временный файл
+state.json
+state.json.tmp

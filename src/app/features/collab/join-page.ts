@@ -9,9 +9,12 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslatePipe } from '../../core/i18n/i18n.service';
+import { TKey } from '../../core/i18n/ru';
 import { CollaborationService } from '../../core/p2p/collaboration.service';
 import { projectIdFromRoom } from '../../core/p2p/protocol';
+import { TeamSyncService } from '../../core/sync/team-sync.service';
 import { PeopleService } from '../../core/services/people.service';
+import { SettingsService } from '../../core/services/settings.service';
 import { ProjectService } from '../../core/services/project.service';
 import { Icon } from '../../shared/ui/icon';
 
@@ -56,10 +59,15 @@ import { Icon } from '../../shared/ui/icon';
                   <span
                     class="size-4 animate-spin rounded-full border-2 border-brand-500 border-t-transparent"
                   ></span>
-                  {{ (session()?.status() === 'online' ? 'join.waiting' : 'join.connecting') | t }}
+                  {{
+                    ((teamMode() ? team.status() : session()?.status()) === 'online'
+                      ? 'join.waiting'
+                      : 'join.connecting'
+                    ) | t
+                  }}
                 </p>
               }
-              @if (session()?.error(); as error) {
+              @if (errorKey(); as error) {
                 <p
                   class="rounded-xl bg-rose-50 p-3 text-sm text-rose-700 dark:bg-rose-950/50 dark:text-rose-300"
                 >
@@ -67,7 +75,7 @@ import { Icon } from '../../shared/ui/icon';
                 </p>
               }
               <button type="button" class="btn-primary w-full" [disabled]="busy()" (click)="join()">
-                {{ (session()?.error() ? 'join.retry' : 'join.button') | t }}
+                {{ (errorKey() ? 'join.retry' : 'join.button') | t }}
               </button>
             }
           </div>
@@ -80,6 +88,8 @@ export class JoinPage {
   readonly roomId = input.required<string>();
 
   protected readonly collab = inject(CollaborationService);
+  protected readonly team = inject(TeamSyncService);
+  private readonly settings = inject(SettingsService);
   protected readonly people = inject(PeopleService);
   private readonly projects = inject(ProjectService);
   private readonly router = inject(Router);
@@ -91,9 +101,23 @@ export class JoinPage {
   protected readonly validLink = computed(() => !!this.projectId());
   /** Сессия этого проекта: статус и ошибка входа. */
   protected readonly session = computed(() => this.collab.session(this.projectId()));
+  protected readonly teamMode = computed(() => this.settings.syncMode() !== 'p2p');
+  protected readonly errorKey = computed((): TKey | null => {
+    const id = this.projectId();
+    if (this.teamMode()) {
+      if (this.started() && id && this.team.ready().has(id) && !this.projects.get(id)) {
+        return 'sync.error.noProject';
+      }
+      return this.team.error();
+    }
+    return this.session()?.error() ?? null;
+  });
   protected readonly busy = computed(() => {
+    if (!this.started() || this.errorKey()) return false;
+    const id = this.projectId();
+    if (this.teamMode()) return !id || !this.team.ready().has(id);
     const session = this.session();
-    if (!this.started() || !session || session.error()) return false;
+    if (!session) return false;
     const status = session.status();
     return (
       status === 'connecting' ||
@@ -107,7 +131,8 @@ export class JoinPage {
     effect(() => {
       const id = this.projectId();
       const project = this.projects.get(id);
-      if (this.started() && project && this.session()?.synced()) {
+      const arrived = this.teamMode() ? this.team.ready().has(id ?? '') : this.session()?.synced();
+      if (this.started() && project && arrived) {
         this.projects.select(project.id);
         void this.router.navigate(['/p', this.projects.routeKey(project), 'board'], {
           replaceUrl: true,

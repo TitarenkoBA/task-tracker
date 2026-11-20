@@ -3,8 +3,10 @@ import type { Lang } from '../i18n/lang';
 import { EntityId } from '../models/entities';
 
 export type ThemePreference = 'light' | 'dark' | 'system';
+/** Как устройства обмениваются общими проектами. */
+export type SyncMode = 'p2p' | 'server' | 'dropbox';
 
-interface DeviceSettings {
+export interface DeviceSettings {
   theme: ThemePreference;
   /** Кто «я» на этом устройстве (id участника). */
   currentUserId: EntityId | null;
@@ -15,6 +17,18 @@ ull — определить по языку браузера. */
   language: Lang | null;
   /** Проекты, над которыми идёт совместная работа, — чтобы продолжить её после перезапуска. */
   collabProjectIds: EntityId[];
+  /** P2P — напрямую между браузерами. Сервер и Dropbox — через хаб, с шифрованием полей. */
+  syncMode: SyncMode;
+  /** Адрес командного сервера, без завершающего слэша. */
+  serverUrl: string;
+  /** Личный токен доступа. На сервере хранится только его хеш. */
+  serverToken: string;
+  /** Парольная фраза команды. Из неё выводится ключ шифрования, на сервер она не уходит. */
+  contentPassphrase: string;
+  /** Токен доступа Dropbox (scope files.content.write). */
+  dropboxToken: string;
+  /** Папка в Dropbox, своя на команду. */
+  dropboxFolder: string;
   /** Когда чат проекта прочитан в последний раз (мс), по id проекта. */
   chatReadAt: Record<EntityId, number>;
 }
@@ -27,6 +41,12 @@ const DEFAULTS: DeviceSettings = {
   language: null,
   collabProjectIds: [],
   chatReadAt: {},
+  syncMode: 'p2p',
+  serverUrl: '',
+  serverToken: '',
+  contentPassphrase: '',
+  dropboxToken: '',
+  dropboxFolder: '/task-tracker',
 };
 
 /**
@@ -44,6 +64,12 @@ export class SettingsService {
   readonly language = () => this.state().language;
   readonly collabProjectIds = () => this.state().collabProjectIds;
   readonly chatReadAt = () => this.state().chatReadAt;
+  readonly syncMode = () => this.state().syncMode;
+  readonly serverUrl = () => this.state().serverUrl;
+  readonly serverToken = () => this.state().serverToken;
+  readonly contentPassphrase = () => this.state().contentPassphrase;
+  readonly dropboxToken = () => this.state().dropboxToken;
+  readonly dropboxFolder = () => this.state().dropboxFolder;
 
   constructor() {
     effect(() => this.write(this.state()));
@@ -51,6 +77,11 @@ export class SettingsService {
 
   set<K extends keyof DeviceSettings>(key: K, value: DeviceSettings[K]): void {
     this.state.update((s) => (s[key] === value ? s : { ...s, [key]: value }));
+  }
+
+  /** Несколько полей сразу, чтобы подключение не перезапускалось на каждое поле. */
+  patch(partial: Partial<DeviceSettings>): void {
+    this.state.update((current) => ({ ...current, ...partial }));
   }
 
   private read(): DeviceSettings {

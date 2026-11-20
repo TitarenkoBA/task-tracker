@@ -183,7 +183,154 @@
     </div>
   </section>
 
-  <!-- Совместная работа (задел на будущее) -->
+  <!-- Командный режим -->
+  <section>
+    <h2 class="section-title">{{ 'sync.title' | t }}</h2>
+    <div class="card space-y-4 p-4">
+      <p class="text-sm text-slate-600 dark:text-slate-300">{{ 'sync.hint' | t }}</p>
+      <div class="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+        @for (mode of modes; track mode.value) {
+          <button
+            type="button"
+            class="rounded-lg px-2 py-2 text-sm"
+            [class]="
+              settings.syncMode() === mode.value
+                ? 'bg-white font-medium shadow-sm dark:bg-slate-950'
+                : 'text-slate-600 dark:text-slate-300'
+            "
+            [attr.aria-pressed]="settings.syncMode() === mode.value"
+            (click)="setMode(mode.value)"
+          >
+            {{ mode.label | t }}
+          </button>
+        }
+      </div>
+      <p class="text-sm">
+        <span class="font-medium">{{ linkStatus() | t }}</span>
+        @if (team.role(); as role) {
+          <span class="text-slate-500"> · {{ roleKey(role) | t }}</span>
+        }
+      </p>
+      @if (team.error(); as error) {
+        <p
+          class="rounded-xl bg-rose-50 p-3 text-sm text-rose-700 dark:bg-rose-950/50 dark:text-rose-300"
+        >
+          {{ error | t }}
+        </p>
+      }
+
+      <label class="block">
+        <span class="label">{{ 'sync.passphrase' | t }}</span>
+        <input
+          class="input"
+          type="password"
+          autocomplete="off"
+          [value]="passphrase()"
+          (input)="passphrase.set($any($event.target).value)"
+        />
+      </label>
+      <p class="text-xs text-slate-500">{{ 'sync.passphraseHint' | t }}</p>
+
+      @if (settings.syncMode() === 'server') {
+        <label class="block">
+          <span class="label">{{ 'sync.serverUrl' | t }}</span>
+          <input
+            class="input font-mono text-xs"
+            placeholder="https://sync.example.com"
+            [value]="serverUrl()"
+            (input)="serverUrl.set($any($event.target).value)"
+          />
+        </label>
+        <label class="block">
+          <span class="label">{{ 'sync.token' | t }}</span>
+          <input
+            class="input font-mono text-xs"
+            type="password"
+            autocomplete="off"
+            [value]="serverToken()"
+            (input)="serverToken.set($any($event.target).value)"
+          />
+        </label>
+      }
+      @if (settings.syncMode() === 'dropbox') {
+        <label class="block">
+          <span class="label">{{ 'sync.dropboxToken' | t }}</span>
+          <input
+            class="input font-mono text-xs"
+            type="password"
+            autocomplete="off"
+            [value]="dropboxToken()"
+            (input)="dropboxToken.set($any($event.target).value)"
+          />
+        </label>
+        <label class="block">
+          <span class="label">{{ 'sync.dropboxFolder' | t }}</span>
+          <input
+            class="input font-mono text-xs"
+            [value]="dropboxFolder()"
+            (input)="dropboxFolder.set($any($event.target).value)"
+          />
+        </label>
+      }
+      @if (settings.syncMode() !== 'p2p') {
+        <button type="button" class="btn-primary" (click)="saveConnection()">
+          {{ 'sync.save' | t }}
+        </button>
+      }
+
+      @if (settings.syncMode() === 'server' && team.role() === 'owner') {
+        <div class="border-t border-slate-100 pt-4 dark:border-slate-800">
+          <h3 class="font-medium">{{ 'sync.members' | t }}</h3>
+          <p class="mt-1 text-xs text-slate-500">{{ 'sync.membersHint' | t }}</p>
+          <ul class="mt-3 divide-y divide-slate-100 dark:divide-slate-800">
+            @for (member of team.members(); track member.id) {
+              <li class="flex items-center gap-2 py-2 text-sm">
+                <span class="flex-1 truncate">{{ member.name }}</span>
+                <span class="text-xs text-slate-500">{{ roleKey(member.role) | t }}</span>
+                <button
+                  type="button"
+                  class="btn-ghost h-8 text-rose-600"
+                  (click)="revokeMember(member.id)"
+                >
+                  {{ 'sync.revoke' | t }}
+                </button>
+              </li>
+            }
+          </ul>
+          <form class="mt-3 flex flex-wrap gap-2" (submit)="$event.preventDefault(); addMember()">
+            <input
+              class="input h-10 min-w-0 flex-1"
+              [placeholder]="'sync.memberName' | t"
+              [value]="memberName()"
+              (input)="memberName.set($any($event.target).value)"
+            />
+            <select
+              class="input h-10 w-auto"
+              [value]="memberRole()"
+              (change)="memberRole.set($any($event.target).value)"
+            >
+              <option value="editor">{{ 'sync.role.editor' | t }}</option>
+              <option value="viewer">{{ 'sync.role.viewer' | t }}</option>
+            </select>
+            <button type="submit" class="btn-secondary h-10">{{ 'sync.addMember' | t }}</button>
+          </form>
+          @if (team.issuedToken(); as token) {
+            <div class="mt-3 rounded-xl bg-amber-50 p-3 text-sm dark:bg-amber-950/40">
+              <p>{{ 'sync.tokenOnce' | t }}</p>
+              <div class="mt-2 flex gap-2">
+                <input class="input min-w-0 flex-1 font-mono text-xs" readonly [value]="token" />
+                <button type="button" class="btn-secondary shrink-0" (click)="copyToken(token)">
+                  {{ 'collab.copy' | t }}
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- Совместная работа -->
   <section>
     <h2 class="section-title">{{ 'settings.collab' | t }}</h2>
     <div class="card flex gap-4 p-4">

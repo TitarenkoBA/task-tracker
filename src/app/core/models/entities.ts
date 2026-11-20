@@ -94,6 +94,11 @@ export interface Issue extends BaseEntity {
   type: IssueType;
   title: string;
   description: string;
+  /**
+   * Снимок CRDT описания (base64). Строка `description` повторяет его текст.
+   * Нет у задач, созданных до появления совместного редактирования описания.
+   */
+  descriptionState?: string;
   statusId: string;
   priority: IssuePriority;
   assigneeId: EntityId | null;

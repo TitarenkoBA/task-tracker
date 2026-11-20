@@ -1,6 +1,7 @@
-import { Person } from '../models/entities';
+import { Issue, Person } from '../models/entities';
 import { formatHlc } from './hlc';
 import { EntityChange, entityToChange, maxClock, mergeEntity } from './merge';
+import { applyTextEdit, stateFromText, textOf } from './text-crdt';
 
 const t = (time: number, replica = 'a') => formatHlc(time, 0, replica);
 
@@ -101,5 +102,36 @@ describe('mergeEntity (LWW по полям)', () => {
   it('maxClock возвращает самую позднюю метку', () => {
     const p = person({ clock: { ...person().clock, email: t(42) } });
     expect(maxClock(p)).toBe(t(42));
+  });
+});
+
+describe('слияние описания задачи', () => {
+  function issueChange(fields: Record<string, unknown>, time: number, replica = 'a'): EntityChange {
+    return {
+      collection: 'issues',
+      id: 'i1',
+      fields,
+      clock: Object.fromEntries(Object.keys(fields).map((key) => [key, t(time, replica)])),
+    };
+  }
+
+  it('одновременные правки разных мест складываются у обоих', () => {
+    const base = stateFromText('abcdef');
+    const left = applyTextEdit(base, 'abcdef', 'abXcdef');
+    const right = applyTextEdit(base, 'abcdef', 'abcdeYf');
+    const anna = mergeEntity<Issue>(
+      undefined,
+      issueChange({ title: 'T', description: 'abXcdef', descriptionState: left }, 5, 'a'),
+    )!;
+    const boris = mergeEntity<Issue>(
+      undefined,
+      issueChange({ title: 'T', description: 'abcdeYf', descriptionState: right }, 5, 'b'),
+    )!;
+    const atBoris = mergeEntity(anna, issueChange({ descriptionState: right }, 5, 'b'))!;
+    const atAnna = mergeEntity(boris, issueChange({ descriptionState: left }, 5, 'a'))!;
+    expect(atBoris.description).toBe('abXcdeYf');
+    expect(atAnna.description).toBe(atBoris.description);
+    expect(textOf(atBoris.descriptionState)).toBe('abXcdeYf');
+    expect(mergeEntity(atBoris, issueChange({ descriptionState: right }, 5, 'b'))).toBeNull();
   });
 });

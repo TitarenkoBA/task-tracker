@@ -122,7 +122,8 @@ export class IssueCreateDialog {
         this.ref.close(issue);
       }
     } catch (error) {
-      this.toasts.error((error as Error).message);
+      const message = (error as Error).message;
+      this.toasts.error(message === 'WRITE_BLOCKED' ? this.i18n.t('sync.readOnly') : message);
     }
   }
 }

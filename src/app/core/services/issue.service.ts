@@ -12,6 +12,7 @@ import {
   IssueType,
   WorkflowStatus,
 } from '../models/entities';
+import { applyTextEdit, stateFromText } from '../sync/text-crdt';
 import { ORDER_STEP, orderBetween } from '../utils/order';
 import { PeopleService } from './people.service';
 import { ProjectService } from './project.service';
@@ -113,6 +114,7 @@ export class IssueService {
       type,
       title,
       description: input.description?.trim() ?? '',
+      descriptionState: stateFromText(input.description?.trim() ?? ''),
       statusId: input.statusId ?? project.statuses[0].id,
       priority: input.priority ?? 'medium',
       assigneeId: input.assigneeId ?? null,
@@ -135,6 +137,14 @@ export class IssueService {
     if (patch.title !== undefined && !patch.title.trim())
       throw new Error(this.i18n.t('error.titleEmpty'));
     if (patch.labels) patch = { ...patch, labels: normalizeLabels(patch.labels) };
+    if (patch.description !== undefined) {
+      const description = patch.description.trim();
+      patch = {
+        ...patch,
+        description,
+        descriptionState: applyTextEdit(before.descriptionState, before.description, description),
+      };
+    }
 
     const after = this.store.update('issues', id, patch);
     if (!after) return undefined;

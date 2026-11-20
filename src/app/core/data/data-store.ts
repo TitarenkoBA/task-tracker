@@ -12,6 +12,7 @@ import {
 } from '../models/entities';
 import { HybridLogicalClock } from '../sync/hlc';
 import { EntityChange, maxClock, mergeEntity } from '../sync/merge';
+import { WriteGate } from '../sync/write-gate';
 import { STORAGE_ADAPTER } from '../storage/storage-adapter';
 
 /** Откуда пришло изменение. От этого зависит, рассылать ли его пирам. */
@@ -37,6 +38,7 @@ const REPLICA_KEY = 'replicaId';
 @Injectable({ providedIn: 'root' })
 export class DataStore {
   private readonly storage = inject(STORAGE_ADAPTER);
+  private readonly gate = inject(WriteGate);
 
   private readonly maps = Object.fromEntries(
     COLLECTIONS.map((c) => [c, signal(new Map())]),
@@ -126,7 +128,9 @@ export class DataStore {
   ): CollectionMap[C] {
     const id = crypto.randomUUID();
     const now = Date.now();
-    this.commit(collection, id, { ...data, createdAt: now, updatedAt: now, deleted: false });
+    const fields = { ...data, createdAt: now, updatedAt: now, deleted: false };
+    if (!this.writable(collection, id, fields)) throw new Error('WRITE_BLOCKED');
+    this.commit(collection, id, fields, true);
     return this.get(collection, id)!;
   }
 
@@ -151,14 +155,17 @@ export class DataStore {
     }
     if (!Object.keys(fields).length) return current;
     fields['updatedAt'] = Date.now();
-    this.commit(collection, id, fields);
+    if (!this.writable(collection, id, fields)) return current;
+    this.commit(collection, id, fields, true);
     return this.get(collection, id);
   }
 
   /** Мягко удалить сущность (см. {@link BaseEntity.deleted}). */
   remove(collection: CollectionName, id: EntityId): void {
     if (!this.get(collection, id)) return;
-    this.commit(collection, id, { deleted: true, updatedAt: Date.now() });
+    const fields = { deleted: true, updatedAt: Date.now() };
+    if (!this.writable(collection, id, fields)) return;
+    this.commit(collection, id, fields, true);
   }
 
   /**
@@ -224,10 +231,47 @@ export class DataStore {
 
   // ---------------------------------------------------------------------------
 
-  private commit(collection: CollectionName, id: EntityId, fields: Record<string, unknown>): void {
+  private commit(
+    collection: CollectionName,
+    id: EntityId,
+    fields: Record<string, unknown>,
+    checked = false,
+  ): void {
+    if (!checked && !this.writable(collection, id, fields)) return;
     const hlc = this.clock.tick();
     const clock = Object.fromEntries(Object.keys(fields).map((k) => [k, hlc]));
     this.applyChanges([{ collection, id, fields: structuredClone(fields), clock }], 'local');
+  }
+
+  /** Локальная правка общего проекта. Входящая синхронизация сюда не заходит. */
+  private writable(
+    collection: CollectionName,
+    id: EntityId,
+    fields: Record<string, unknown>,
+  ): boolean {
+    if (this.gate.allows(this.projectIdFor(collection, id, fields))) return true;
+    this.gate.bump();
+    return false;
+  }
+
+  private projectIdFor(
+    collection: CollectionName,
+    id: EntityId,
+    fields: Record<string, unknown>,
+  ): string | null {
+    if (collection === 'projects') return id;
+    if (typeof fields['projectId'] === 'string') return fields['projectId'];
+    const current = this.maps[collection]().get(id) as
+      { projectId?: string; issueId?: string } | undefined;
+    if (current?.projectId) return current.projectId;
+    if (collection === 'comments' || collection === 'activity') {
+      const issueId =
+        (typeof fields['issueId'] === 'string' ? fields['issueId'] : current?.issueId) ?? '';
+      const issue = this.maps['issues']().get(issueId) as { projectId?: string } | undefined;
+      return issue?.projectId ?? null;
+    }
+    if (collection === 'people') return this.gate.sharedProjectId();
+    return null;
   }
 
   private load(snapshot: Snapshot): void {

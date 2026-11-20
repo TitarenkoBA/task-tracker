@@ -14,6 +14,7 @@ import { I18n, TranslatePipe } from './core/i18n/i18n.service';
 import { TKey } from './core/i18n/ru';
 import { COLOR_CLASSES } from './core/models/catalog';
 import { CollaborationService } from './core/p2p/collaboration.service';
+import { WriteGate } from './core/sync/write-gate';
 import { ChatService } from './core/services/chat.service';
 import { ProjectService } from './core/services/project.service';
 import { DB_OUTDATED_EVENT } from './core/storage/indexeddb-storage';
@@ -52,6 +53,7 @@ export class App {
   private readonly toasts = inject(ToastService);
   private readonly store = inject(DataStore);
   private readonly i18n = inject(I18n);
+  private readonly gate = inject(WriteGate);
 
   protected readonly colors = COLOR_CLASSES;
 
@@ -86,6 +88,9 @@ export class App {
       if (this.store.persistError()) {
         this.toasts.error(this.i18n.t('app.saveFailed'));
       }
+    });
+    effect(() => {
+      if (this.gate.blocked()) this.toasts.error(this.i18n.t('sync.readOnly'));
     });
 
     // Другая вкладка открыла новую версию приложения и обновила базу: эта вкладка

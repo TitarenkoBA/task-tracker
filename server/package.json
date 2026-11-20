@@ -1,0 +1,13 @@
+{
+  "name": "task-tracker-server",
+  "private": true,
+  "type": "module",
+  "description": "Командный сервер Task Tracker: личные токены, роли, журнал изменений",
+  "scripts": {
+    "start": "node index.mjs",
+    "test": "node --test --test-concurrency=1"
+  },
+  "dependencies": {
+    "ws": "^8.18.3"
+  }
+}

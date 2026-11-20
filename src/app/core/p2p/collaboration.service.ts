@@ -106,6 +106,7 @@ export class CollaborationService {
   async start(projectId: EntityId): Promise<boolean> {
     if (!this.projects.get(projectId)) return false;
     this.remember(projectId, true);
+    if (this.settings.syncMode() !== 'p2p') return true;
     return this.open(projectId).connect(true);
   }
 
@@ -117,16 +118,24 @@ export class CollaborationService {
     const projectId = projectIdFromRoom(roomId);
     if (!projectId) return false;
     this.remember(projectId, true);
+    if (this.settings.syncMode() !== 'p2p') return true;
     return this.open(projectId).connect(!!this.projects.get(projectId));
   }
 
   /** После перезапуска приложения продолжить все сессии, которые были. */
   resume(): void {
+    if (this.settings.syncMode() !== 'p2p') return;
     for (const projectId of this.settings.collabProjectIds()) {
       if (this.projects.get(projectId) && !this.session(projectId)) {
         void this.open(projectId).connect(true);
       }
     }
+  }
+
+  /** Закрыть комнаты, не забывая, какие проекты общие. Нужно при переходе на сервер или Dropbox. */
+  pausePeers(): void {
+    for (const session of this.sessions()) session.stop();
+    this.sessionMap.set(new Map());
   }
 
   /**

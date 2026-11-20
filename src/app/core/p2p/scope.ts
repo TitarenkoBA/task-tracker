@@ -81,6 +81,7 @@ const SCHEMAS: Record<CollectionName, Record<string, Validator>> = {
     type: oneOf(['epic', 'story', 'task', 'bug', 'subtask']),
     title: (v) => str(500)(v) && (v as string).trim().length > 0,
     description: str(100_000),
+    descriptionState: str(2_000_000),
     statusId: str(64),
     priority: oneOf(['highest', 'high', 'medium', 'low', 'lowest']),
     assigneeId: nullable(id),

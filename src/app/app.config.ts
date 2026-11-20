@@ -20,6 +20,7 @@ import { I18nTitleStrategy } from './core/i18n/title-strategy';
 import { PeopleService } from './core/services/people.service';
 import { ThemeService } from './core/services/theme.service';
 import { CollaborationService } from './core/p2p/collaboration.service';
+import { TeamSyncService } from './core/sync/team-sync.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -42,9 +43,11 @@ export const appConfig: ApplicationConfig = {
       const store = inject(DataStore);
       const people = inject(PeopleService);
       const collaboration = inject(CollaborationService);
+      inject(TeamSyncService);
       await store.init();
       people.ensureMe();
       // Продолжить совместную работу, если она шла до перезапуска (в фоне, не блокируя запуск).
+      // Сервер и Dropbox поднимает TeamSyncService сам, по режиму в настройках.
       collaboration.resume();
     }),
     { provide: TitleStrategy, useClass: I18nTitleStrategy },

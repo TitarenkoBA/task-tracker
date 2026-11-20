@@ -4,7 +4,9 @@ import { I18n, TranslatePipe } from '../../core/i18n/i18n.service';
 import { TKey } from '../../core/i18n/ru';
 import { EntityId, Person } from '../../core/models/entities';
 import { CollaborationService } from '../../core/p2p/collaboration.service';
+import { TeamSyncService } from '../../core/sync/team-sync.service';
 import { PeopleService } from '../../core/services/people.service';
+import { SettingsService } from '../../core/services/settings.service';
 import { ProjectService } from '../../core/services/project.service';
 import { ToastService } from '../../core/services/toast.service';
 import { DialogFrame } from '../../shared/dialog/dialog-frame';
@@ -34,13 +36,13 @@ export const STATUS_DOT: Record<string, string> = {
           <div class="flex items-center gap-2">
             <span class="size-2.5 rounded-full" [class]="dot()"></span>
             <span class="font-medium">{{ statusLabel() | t }}</span>
-            @if (session()?.status() === 'online') {
+            @if (p2p() && session()?.status() === 'online') {
               <span class="text-slate-500"
                 >· {{ 'collab.onlineCount' | t: { count: online() } }}</span
               >
             }
           </div>
-          @if (session()?.error(); as error) {
+          @if (errorKey(); as error) {
             <p
               class="rounded-xl bg-rose-50 p-3 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300"
             >
@@ -77,48 +79,57 @@ export const STATUS_DOT: Record<string, string> = {
                 </button>
               }
             </div>
-            <p class="mt-1.5 text-xs text-slate-500">{{ 'collab.inviteHint' | t }}</p>
+            <p class="mt-1.5 text-xs text-slate-500">{{ inviteHint() | t }}</p>
           </section>
 
+          @if (!p2p()) {
+            <p class="text-slate-600 dark:text-slate-300">{{ 'sync.dialogHint' | t }}</p>
+            @if (team.role(); as role) {
+              <p class="text-xs text-slate-500">{{ roleKey(role) | t }}</p>
+            }
+          }
+
           <!-- Участники -->
-          <section>
-            <h3 class="label">{{ 'collab.participants' | t }}</h3>
-            <ul
-              class="divide-y divide-slate-100 rounded-xl border border-slate-200 dark:divide-slate-800 dark:border-slate-700"
-            >
-              <li class="flex items-center gap-3 px-3 py-2">
-                <app-avatar size="sm" [person]="people.me()" />
-                <span class="flex-1 truncate"
-                  >{{ people.me()?.name }}
-                  <span class="text-slate-400">({{ 'collab.you' | t }})</span></span
-                >
-                @if (session()?.role() === 'host') {
-                  <span
-                    class="chip h-5 bg-slate-100 text-[11px] text-slate-500 dark:bg-slate-800"
-                    >{{ 'collab.host' | t }}</span
-                  >
-                }
-              </li>
-              @for (p of session()?.participants() ?? []; track p.peerId) {
+          @if (p2p()) {
+            <section>
+              <h3 class="label">{{ 'collab.participants' | t }}</h3>
+              <ul
+                class="divide-y divide-slate-100 rounded-xl border border-slate-200 dark:divide-slate-800 dark:border-slate-700"
+              >
                 <li class="flex items-center gap-3 px-3 py-2">
-                  <app-avatar size="sm" [person]="personFor(p.personId, p.name)" />
-                  <span class="flex-1 truncate">{{ p.name }}</span>
-                  @if (p.isHost) {
+                  <app-avatar size="sm" [person]="people.me()" />
+                  <span class="flex-1 truncate"
+                    >{{ people.me()?.name }}
+                    <span class="text-slate-400">({{ 'collab.you' | t }})</span></span
+                  >
+                  @if (session()?.role() === 'host') {
                     <span
                       class="chip h-5 bg-slate-100 text-[11px] text-slate-500 dark:bg-slate-800"
                       >{{ 'collab.host' | t }}</span
                     >
                   }
-                  <span
-                    class="size-2 rounded-full"
-                    [class]="p.connected ? 'bg-emerald-500' : 'bg-amber-400 animate-pulse'"
-                  ></span>
                 </li>
-              } @empty {
-                <li class="px-3 py-3 text-slate-500">{{ 'collab.alone' | t }}</li>
-              }
-            </ul>
-          </section>
+                @for (p of session()?.participants() ?? []; track p.peerId) {
+                  <li class="flex items-center gap-3 px-3 py-2">
+                    <app-avatar size="sm" [person]="personFor(p.personId, p.name)" />
+                    <span class="flex-1 truncate">{{ p.name }}</span>
+                    @if (p.isHost) {
+                      <span
+                        class="chip h-5 bg-slate-100 text-[11px] text-slate-500 dark:bg-slate-800"
+                        >{{ 'collab.host' | t }}</span
+                      >
+                    }
+                    <span
+                      class="size-2 rounded-full"
+                      [class]="p.connected ? 'bg-emerald-500' : 'bg-amber-400 animate-pulse'"
+                    ></span>
+                  </li>
+                } @empty {
+                  <li class="px-3 py-3 text-slate-500">{{ 'collab.alone' | t }}</li>
+                }
+              </ul>
+            </section>
+          }
           <p class="text-xs text-slate-500">{{ 'collab.leaveHint' | t }}</p>
         }
 
@@ -159,6 +170,8 @@ export const STATUS_DOT: Record<string, string> = {
 export class CollabDialog {
   private readonly projectIdValue = inject<EntityId>(DIALOG_DATA);
   protected readonly collab = inject(CollaborationService);
+  protected readonly team = inject(TeamSyncService);
+  private readonly settings = inject(SettingsService);
   protected readonly people = inject(PeopleService);
   private readonly projects = inject(ProjectService);
   private readonly toasts = inject(ToastService);
@@ -166,15 +179,34 @@ export class CollabDialog {
 
   protected readonly canShare = typeof navigator !== 'undefined' && 'share' in navigator;
   protected readonly session = computed(() => this.collab.session(this.projectIdValue));
-  protected readonly isThisProject = computed(() => !!this.session());
+  protected readonly p2p = computed(() => this.settings.syncMode() === 'p2p');
+  protected readonly isThisProject = computed(() =>
+    this.settings.collabProjectIds().includes(this.projectIdValue),
+  );
+  protected readonly errorKey = computed(() =>
+    this.p2p() ? this.session()?.error() : this.team.error(),
+  );
+  protected readonly inviteHint = computed<TKey>(() =>
+    this.p2p() ? 'collab.inviteHint' : 'sync.inviteHint',
+  );
+
+  protected roleKey(role: string): TKey {
+    if (role === 'owner') return 'sync.role.owner';
+    if (role === 'viewer') return 'sync.role.viewer';
+    return 'sync.role.editor';
+  }
   protected readonly link = computed(() => this.collab.inviteLink(this.projectIdValue));
   protected readonly online = computed(
     () => (this.session()?.participants() ?? []).filter((p) => p.connected).length + 1,
   );
-  protected readonly dot = computed(() => STATUS_DOT[this.session()?.status() ?? 'idle']);
-  protected readonly statusLabel = computed(
-    () => `collab.status.${this.session()?.status() ?? 'idle'}` as TKey,
-  );
+  protected readonly dot = computed(() => {
+    const status = this.p2p() ? this.session()?.status() : this.team.status();
+    return STATUS_DOT[status ?? 'idle'];
+  });
+  protected readonly statusLabel = computed(() => {
+    const status = this.p2p() ? (this.session()?.status() ?? 'idle') : this.team.status();
+    return `collab.status.${status}` as TKey;
+  });
 
   protected start(): void {
     void this.collab.start(this.projectIdValue);

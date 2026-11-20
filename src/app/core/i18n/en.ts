@@ -458,4 +458,42 @@ export const en: Record<TKey, Entry> = {
   'chat.empty': 'No messages yet. Say hi!',
   'chat.offline': 'You are offline: messages are saved and will reach others once you connect.',
   'chat.delete': 'Delete message',
+
+  // Team mode: server and Dropbox
+  'sync.title': 'How to sync',
+  'sync.hint':
+    '“Share” connects browsers directly. A server or Dropbox keeps the log when the other person is offline. Issue text is encrypted with a team passphrase before it leaves the device.',
+  'sync.mode.p2p': 'Share',
+  'sync.mode.server': 'Server',
+  'sync.mode.dropbox': 'Dropbox',
+  'sync.passphrase': 'Team passphrase',
+  'sync.passphraseHint':
+    'Everyone uses the same one. Without it, the server and Dropbox only store unreadable text.',
+  'sync.serverUrl': 'Server address',
+  'sync.token': 'Your token',
+  'sync.dropboxToken': 'Dropbox token',
+  'sync.dropboxFolder': 'Dropbox folder',
+  'sync.save': 'Save and connect',
+  'sync.saved': 'Connection saved',
+  'sync.members': 'Who has access',
+  'sync.membersHint':
+    'Each person gets their own token, shown once. “View only” can open the project, but the server rejects edits.',
+  'sync.memberName': 'Name',
+  'sync.role.owner': 'Owner',
+  'sync.role.editor': 'Editor',
+  'sync.role.viewer': 'View only',
+  'sync.addMember': 'Issue a token',
+  'sync.revoke': 'Revoke',
+  'sync.tokenOnce': 'This person’s token. Copy it now: the server will not show it again.',
+  'sync.dialogHint':
+    'This project syncs through the server or Dropbox. The link has no token or passphrase — those go in Settings.',
+  'sync.inviteHint':
+    'The link only opens the project. Share the token and passphrase separately, not inside this link.',
+  'sync.readOnly': 'This token is view only. Changes are not saved.',
+  'sync.error.passphrase': 'The team passphrase is required. The connection stays off without it.',
+  'sync.error.credentials': 'Enter the address and your token — or a Dropbox token.',
+  'sync.error.network': 'No connection. Retrying…',
+  'sync.error.forbidden': 'This token is not allowed to do that.',
+  'sync.error.noProject':
+    'This project is not on the server yet. Someone who already has it needs to open it first.',
 };
