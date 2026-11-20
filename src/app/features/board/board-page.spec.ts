@@ -3,6 +3,8 @@ import { provideRouter } from '@angular/router';
 import { setupTestStore } from '../../../testing/test-store';
 import { DemoDataService } from '../../core/services/demo-data.service';
 import { IssueService } from '../../core/services/issue.service';
+import { ProjectService } from '../../core/services/project.service';
+import { SettingsService } from '../../core/services/settings.service';
 import { BoardPage } from './board-page';
 
 describe('BoardPage', () => {
@@ -51,6 +53,16 @@ describe('BoardPage', () => {
     fixture.componentRef.setInput('projectKey', 'NOPE');
     await fixture.whenStable();
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Проект не найден');
+  });
+
+  it('открывает доску общего проекта в серверном режиме без P2P-сессии', async () => {
+    const project = TestBed.inject(ProjectService).projects()[0];
+    TestBed.inject(SettingsService).patch({
+      syncMode: 'server',
+      collabProjectIds: [project.id],
+    });
+    const el = await render();
+    expect(el.querySelector('app-collab-button button')).toBeTruthy();
   });
 
   it('реагирует на изменение данных без перезагрузки', async () => {

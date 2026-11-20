@@ -88,18 +88,17 @@ export class CollabButton {
     return STATUS_DOT[status ?? 'idle'];
   });
   protected readonly unread = computed(() => this.chat.unread(this.project().id));
-  /** Другие участники в сети — для аватаров на кнопке. */
-  protected readonly online = computed<Person[]>(() =>
-    this.isThisProject()
-      ? this.session()!
-          .participants()
-          .filter((p) => p.connected)
-          .map(
-            (p) =>
-              this.people.get(p.personId) ??
-              ({ id: p.peerId, name: p.name, email: '', color: 'violet' } as unknown as Person),
-          )
-      : [],
+  /** Другие участники в сети — для аватаров на кнопке. В режиме сервера P2P-сессии нет. */
+  protected readonly online = computed<Person[]>(
+    () =>
+      (this.isThisProject() ? this.session() : undefined)
+        ?.participants()
+        .filter((p) => p.connected)
+        .map(
+          (p) =>
+            this.people.get(p.personId) ??
+            ({ id: p.peerId, name: p.name, email: '', color: 'violet' } as unknown as Person),
+        ) ?? [],
   );
 
   protected open(): void {
