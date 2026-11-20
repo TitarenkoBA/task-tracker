@@ -100,6 +100,21 @@ node server/yc-up.mjs --domain sync.example.com --recreate
 его видят те, у кого есть доступ к каталогу. `--origin https://user.github.io` дополнительно
 принимает запросы только с этого сайта. Путь страницы (`/task-tracker/`) в origin не входит.
 
+### Любой VPS
+
+Та же схема без Docker и без Yandex Cloud. На компьютере нужен только клиент SSH.
+Машина — Ubuntu, Debian или другой Linux с systemd и bash. Команда копирует сервер
+на VPS и ставит Node.js 22. С доменом перед ним встаёт Caddy и сам получает сертификат.
+
+```bash
+node server/vps-up.mjs root@203.0.113.10 --domain sync.example.com
+```
+
+Без `--domain` сервер слушает `http://<ip>:8787`, его откроет локальный `npm start`.
+A-запись домена должна указывать на этот VPS без прокси. Повторный запуск обновляет
+файлы и не стирает журнал. Токен владельца печатается в конце; если сервер уже
+запускался, это прежний токен.
+
 ## Dropbox
 
 1. В [консоли Dropbox](https://www.dropbox.com/developers/apps) создайте приложение с доступом к файлам.

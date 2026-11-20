@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node index.mjs",
     "test": "node --test --test-concurrency=1",
-    "up": "node yc-up.mjs"
+    "up": "node yc-up.mjs",
+    "vps": "node vps-up.mjs"
   },
   "dependencies": {
     "ws": "^8.18.3"
