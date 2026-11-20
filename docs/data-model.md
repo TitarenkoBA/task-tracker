@@ -48,6 +48,7 @@ erDiagram
 | `number` | Номер в проекте. Ключ задачи = `${project.key}-${number}` |
 | `type` | `epic`, `story`, `task`, `bug`, `subtask` |
 | `title`, `description` | Название (обязательно) и описание (Markdown) |
+| `descriptionState` | Снимок текстового CRDT описания. Строка `description` повторяет его текст. У старых задач поля может не быть |
 | `statusId` | `id` статуса из `project.statuses` |
 | `priority` | `highest`, `high`, `medium`, `low`, `lowest` |
 | `assigneeId`, `reporterId` | Исполнитель и автор (`people`) или `null` |
